@@ -393,7 +393,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 4: Supabase clients and Next 16 `proxy.ts`**
+- [x] **Unit 4: Supabase clients and Next 16 `proxy.ts`**
 
 **Goal:** Create the three Supabase client factories, the Next 16 `proxy.ts` that refreshes the session via `getClaims()`, and a tiny `requireAuth()` server helper used by Route Handlers and Server Components.
 
