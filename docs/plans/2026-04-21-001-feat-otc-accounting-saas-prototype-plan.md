@@ -262,7 +262,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 1 — Foundation (Tue afternoon → Wed morning)
 
-- [ ] **Unit 1: Project and environment provisioning**
+- [x] **Unit 1: Project and environment provisioning**
 
 **Goal:** Provision all external services and wire local/Vercel env vars so subsequent units can run.
 
@@ -299,7 +299,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 2: Install dependencies and initialize shadcn/ui**
+- [x] **Unit 2: Install dependencies and initialize shadcn/ui**
 
 **Goal:** Install all runtime and dev dependencies; initialize shadcn/ui; tighten ESLint to enforce R32.
 
@@ -337,7 +337,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 3: Database schema, RLS, Storage RLS, SECURITY DEFINER writer**
+- [x] **Unit 3: Database schema, RLS, Storage RLS, SECURITY DEFINER writer**
 
 **Goal:** Create the `workspaces`, `workspace_members`, `documents` tables; the `document_status` enum; RLS policies; Storage bucket + Storage RLS; the `update_extraction_result` SECURITY DEFINER function; the `auth.users` → workspace trigger; and generate TypeScript types.
 
