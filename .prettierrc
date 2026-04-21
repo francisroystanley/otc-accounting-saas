@@ -3,8 +3,9 @@
   "useTabs": false,
   "quoteProps": "consistent",
   "arrowParens": "avoid",
+  "trailingComma": "es5",
   "printWidth": 120,
-  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "plugins": ["@trivago/prettier-plugin-sort-imports", "prettier-plugin-tailwindcss"],
   "importOrder": ["^react$", "<THIRD_PARTY_MODULES>", "^@/(.*)$", "^[./]", "^.+\\.css$"],
   "importOrderSeparation": false,
   "importOrderSortSpecifiers": true
