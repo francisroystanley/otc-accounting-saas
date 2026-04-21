@@ -272,7 +272,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 **Files:**
 
-- Create: `.env.local.example` (template committed)
+- Create: `.env.example` (template committed)
 - Create: `.env.local` (uncommitted, `.gitignore`'d — already ignored by default `.gitignore`)
 - Modify: `.gitignore` (verify `.env*.local` is ignored)
 - Modify: `README.md` (provisional setup section — final pass in U15)
@@ -283,7 +283,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 - Provision Google AI Studio API key for `gemini-2.5-flash`.
 - Provision Upstash QStash (collect `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`).
 - Provision GitHub repo (push existing boilerplate) and Vercel project linked to it.
-- Commit `.env.local.example` with all required keys listed and commented (never real values).
+- Commit `.env.example` with all required keys listed and commented (never real values).
 - Vercel env vars configured via `vercel env add` for Production and Preview: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (formerly anon key — both names still work, use the new name going forward), `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_GENAI_API_KEY`, `QSTASH_TOKEN`, `QSTASH_CURRENT_SIGNING_KEY`, `QSTASH_NEXT_SIGNING_KEY`, `USE_QSTASH` (dev-only toggle; default `true` in prod).
 
 **Patterns to follow:** None (first unit).
@@ -1073,7 +1073,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 - **README.md** — the only reviewer-facing doc. Must cover setup, architecture (with diagrams from this plan's HLD section), service-role inventory (R28c), what was / wasn't built, known issues (R35 accepted risks + export ceiling), and extraction quality summary.
 - **EXTRACTION_REPORT.md** — committed at submission (R13a rationale record).
 - **docs/loom-script.md** — internal artifact; not part of the reviewer email.
-- **`.env.local.example`** — list of required keys with comments.
+- **`.env.example`** — list of required keys with comments.
 - **Inline code comments** — only at the SECURITY DEFINER function, the three Supabase clients, and the QStash receiver's idempotent claim. These are the non-obvious security boundaries and merit a one-line WHY.
 
 ## Operational / Rollout Notes

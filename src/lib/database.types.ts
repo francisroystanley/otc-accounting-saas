@@ -122,11 +122,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      publication_has_documents: { Args: never; Returns: boolean }
       update_extraction_result: {
         Args: {
-          data: Json
+          data?: Json
           doc_id: string
-          error: string
+          error?: string
           new_status: Database["public"]["Enums"]["document_status"]
         }
         Returns: undefined
