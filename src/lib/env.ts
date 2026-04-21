@@ -25,3 +25,19 @@ export const getSupabasePublishableKey = (): string => {
 export const getSupabaseServiceRoleKey = (): string => {
   return readEnv("SUPABASE_SERVICE_ROLE_KEY");
 };
+
+export const getPublicBaseUrl = (): string | null => {
+  const siteUrl = readOptionalEnv("NEXT_PUBLIC_SITE_URL");
+
+  if (siteUrl !== undefined) {
+    return siteUrl.replace(/\/$/, "");
+  }
+
+  const prodUrl = readOptionalEnv("VERCEL_PROJECT_PRODUCTION_URL") ?? readOptionalEnv("VERCEL_URL");
+
+  if (prodUrl !== undefined) {
+    return `https://${prodUrl}`;
+  }
+
+  return null;
+};
