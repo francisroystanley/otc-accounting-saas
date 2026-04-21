@@ -437,7 +437,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 5: Authentication pages (login, signup, verify callback)**
+- [x] **Unit 5: Authentication pages (login, signup, verify callback)**
 
 **Goal:** Implement the three auth surfaces so reviewers can sign in and a human new-signup can complete email verification.
 

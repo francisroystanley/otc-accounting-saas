@@ -1,21 +1,12 @@
 import "server-only";
+import { getPublicBaseUrl } from "@/lib/env";
 
 const buildAllowedOrigins = (): string[] => {
   const origins = new Set<string>();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
-  const vercelUrl = process.env.VERCEL_URL;
-  const prodUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL;
+  const base = getPublicBaseUrl();
 
-  if (siteUrl !== undefined && siteUrl !== "") {
-    origins.add(siteUrl.replace(/\/$/, ""));
-  }
-
-  if (vercelUrl !== undefined && vercelUrl !== "") {
-    origins.add(`https://${vercelUrl}`);
-  }
-
-  if (prodUrl !== undefined && prodUrl !== "") {
-    origins.add(`https://${prodUrl}`);
+  if (base !== null) {
+    origins.add(base);
   }
 
   if (process.env.NODE_ENV !== "production") {
