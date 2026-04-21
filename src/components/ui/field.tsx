@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
-function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
+const FieldSet = ({ className, ...props }: React.ComponentProps<"fieldset">) => {
   return (
     <fieldset
       data-slot="field-set"
@@ -17,13 +17,13 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
       {...props}
     />
   );
-}
+};
 
-function FieldLegend({
+const FieldLegend = ({
   className,
   variant = "legend",
   ...props
-}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
+}: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) => {
   return (
     <legend
       data-slot="field-legend"
@@ -32,9 +32,9 @@ function FieldLegend({
       {...props}
     />
   );
-}
+};
 
-function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
+const FieldGroup = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="field-group"
@@ -45,7 +45,7 @@ function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   );
-}
+};
 
 const fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:text-destructive", {
   variants: {
@@ -62,11 +62,11 @@ const fieldVariants = cva("group/field flex w-full gap-2 data-[invalid=true]:tex
   },
 });
 
-function Field({
+const Field = ({
   className,
   orientation = "vertical",
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) => {
   return (
     <div
       role="group"
@@ -76,9 +76,9 @@ function Field({
       {...props}
     />
   );
-}
+};
 
-function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
+const FieldContent = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="field-content"
@@ -86,9 +86,9 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   );
-}
+};
 
-function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+const FieldLabel = ({ className, ...props }: React.ComponentProps<typeof Label>) => {
   return (
     <Label
       data-slot="field-label"
@@ -100,9 +100,9 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
       {...props}
     />
   );
-}
+};
 
-function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+const FieldTitle = ({ className, ...props }: React.ComponentProps<"div">) => {
   return (
     <div
       data-slot="field-label"
@@ -113,9 +113,9 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   );
-}
+};
 
-function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
+const FieldDescription = ({ className, ...props }: React.ComponentProps<"p">) => {
   return (
     <p
       data-slot="field-description"
@@ -128,15 +128,15 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
       {...props}
     />
   );
-}
+};
 
-function FieldSeparator({
+const FieldSeparator = ({
   children,
   className,
   ...props
 }: React.ComponentProps<"div"> & {
   children?: React.ReactNode;
-}) {
+}) => {
   return (
     <div
       data-slot="field-separator"
@@ -155,16 +155,16 @@ function FieldSeparator({
       )}
     </div>
   );
-}
+};
 
-function FieldError({
+const FieldError = ({
   className,
   children,
   errors,
   ...props
 }: React.ComponentProps<"div"> & {
   errors?: Array<{ message?: string } | undefined>;
-}) {
+}) => {
   const content = useMemo(() => {
     if (children) {
       return children;
@@ -174,7 +174,13 @@ function FieldError({
       return null;
     }
 
-    const uniqueErrors = [...new Map(errors.map(error => [error?.message, error])).values()];
+    const uniqueErrors = [
+      ...new Map(
+        errors.map(error => {
+          return [error?.message, error];
+        }),
+      ).values(),
+    ];
 
     if (uniqueErrors?.length == 1) {
       return uniqueErrors[0]?.message;
@@ -182,7 +188,9 @@ function FieldError({
 
     return (
       <ul className="ml-4 flex list-disc flex-col gap-1">
-        {uniqueErrors.map((error, index) => error?.message && <li key={index}>{error.message}</li>)}
+        {uniqueErrors.map((error, index) => {
+          return error?.message && <li key={index}>{error.message}</li>;
+        })}
       </ul>
     );
   }, [children, errors]);
@@ -201,7 +209,7 @@ function FieldError({
       {content}
     </div>
   );
-}
+};
 
 export {
   Field,

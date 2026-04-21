@@ -6,9 +6,9 @@
     "build": "next build",
     "db:types": "supabase gen types typescript --project-id $SUPABASE_PROJECT_REF > src/lib/database.types.ts",
     "dev": "next dev",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "tsc --noEmit && eslint",
+    "format": "eslint . --fix && prettier --write .",
+    "format:check": "eslint . && prettier --check .",
+    "lint": "tsc --noEmit && eslint .",
     "start": "next start"
   },
   "dependencies": {
@@ -34,6 +34,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@tailwindcss/postcss": "^4",
     "@trivago/prettier-plugin-sort-imports": "^6.0.2",
     "@types/node": "^20",
@@ -43,6 +44,7 @@
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "eslint-plugin-prefer-arrow-functions": "^3.9.1",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "supabase": "^2.93.0",
