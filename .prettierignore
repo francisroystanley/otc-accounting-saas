@@ -8,3 +8,4 @@ public
 package-lock.json
 .vercel
 .env*
+src/lib/database.types.ts

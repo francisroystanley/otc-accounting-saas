@@ -1,0 +1,11 @@
+{
+  "tabWidth": 2,
+  "useTabs": false,
+  "quoteProps": "consistent",
+  "arrowParens": "avoid",
+  "printWidth": 120,
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrder": ["^react$", "<THIRD_PARTY_MODULES>", "^@/(.*)$", "^[./]", "^.+\\.css$"],
+  "importOrderSeparation": false,
+  "importOrderSortSpecifiers": true
+}
