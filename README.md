@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OTC Accounting SaaS
 
-## Getting Started
+A prototype SaaS that ingests US tax documents (W-2, 1099-NEC, 1099-MISC, K-1), extracts structured fields via Gemini, lets reviewers verify low-confidence items, and exports per-doc-type CSVs.
 
-First, run the development server:
+Built on Next.js 16 (App Router), Supabase (Auth + Postgres + Storage + Realtime), Upstash QStash, and Google Gemini 2.5 Flash. Deployed on Vercel.
+
+> This README is provisional — a final setup + reviewer walkthrough lands in U15.
+
+## Prerequisites
+
+- Node.js 24 LTS
+- npm
+- Vercel CLI (`npm i -g vercel`)
+- Supabase CLI (`npm i -g supabase`)
+
+## Setup
+
+### 1. Clone and install
+
+```bash
+git clone <repo-url>
+cd otc-accounting-saas
+npm install
+```
+
+### 2. Provision external services
+
+You will need accounts / projects on:
+
+| Service                                                | What to create                                           | Where to find keys                            |
+| ------------------------------------------------------ | -------------------------------------------------------- | --------------------------------------------- |
+| [Supabase](https://supabase.com/dashboard)             | A new project (keep asymmetric JWT signing keys enabled) | Project Settings → Data API                   |
+| [Google AI Studio](https://aistudio.google.com/apikey) | An API key                                               | API keys page                                 |
+| [Upstash QStash](https://console.upstash.com/qstash)   | A QStash instance                                        | Dashboard (token + current/next signing keys) |
+| [Vercel](https://vercel.com/new)                       | A project linked to the GitHub repo                      | CLI (`vercel link`)                           |
+
+### 3. Configure local environment
+
+Copy the template and fill in values:
+
+```bash
+cp .env.example .env.local
+```
+
+Each variable is documented inline in `.env.example`.
+
+### 4. Configure Vercel environment
+
+Once keys are in `.env.local`, push them to Vercel Production and Preview:
+
+```bash
+vercel link
+vercel env add NEXT_PUBLIC_SUPABASE_URL
+vercel env add NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+vercel env add SUPABASE_SERVICE_ROLE_KEY
+vercel env add GOOGLE_GENAI_API_KEY
+vercel env add QSTASH_TOKEN
+vercel env add QSTASH_CURRENT_SIGNING_KEY
+vercel env add QSTASH_NEXT_SIGNING_KEY
+vercel env add USE_QSTASH
+```
+
+Verify with `vercel env ls`.
+
+## Develop
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app/` — Next.js App Router routes (auth, dashboard, upload, documents, API)
+- `src/lib/` — Supabase clients, extraction pipeline, auth helpers
+- `supabase/migrations/` — SQL migrations (schema, RLS, Storage, Realtime, SECURITY DEFINER function)
+- `docs/plans/` — Implementation plan and phase breakdown
+- `docs/brainstorms/` — Requirements source of truth
