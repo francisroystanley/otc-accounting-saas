@@ -589,7 +589,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 8: `/api/extract` QStash receiver**
+- [x] **Unit 8: `/api/extract` QStash receiver**
 
 **Goal:** Implement the QStash-invoked receiver: verify signature, authorize payload, perform the idempotent claim, run Gemini, write via `update_extraction_result`, handle errors.
 

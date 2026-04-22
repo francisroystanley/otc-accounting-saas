@@ -34,6 +34,14 @@ export const getGeminiModelOverride = (): string | undefined => {
   return readOptionalEnv("GEMINI_MODEL");
 };
 
+export const getQstashToken = (): string => {
+  return readEnv("QSTASH_TOKEN");
+};
+
+export const isQstashDisabled = (): boolean => {
+  return readOptionalEnv("USE_QSTASH") === "false";
+};
+
 export const getPublicBaseUrl = (): string | null => {
   const siteUrl = readOptionalEnv("NEXT_PUBLIC_SITE_URL");
 
