@@ -15,11 +15,29 @@ const readOptionalEnv = (name: string): string | undefined => {
 };
 
 export const getSupabaseUrl = (): string => {
-  return readEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (value === undefined || value === "") {
+    throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL");
+  }
+
+  return value;
 };
 
 export const getSupabasePublishableKey = (): string => {
-  return readOptionalEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY") ?? readEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  const publishable = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (publishable !== undefined && publishable !== "") {
+    return publishable;
+  }
+
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (anon === undefined || anon === "") {
+    throw new Error("Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  }
+
+  return anon;
 };
 
 export const getSupabaseServiceRoleKey = (): string => {
