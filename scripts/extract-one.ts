@@ -22,6 +22,8 @@ type CliArgs = {
   workspaceId: string | null;
 };
 
+type ServiceClient = ReturnType<typeof createSupabaseServiceRoleClient>;
+
 const parseArgs = (argv: readonly string[]): CliArgs => {
   let pdfPath: string | null = null;
   let workspaceId: string | null = null;
@@ -45,10 +47,7 @@ const parseArgs = (argv: readonly string[]): CliArgs => {
   return { pdfPath, workspaceId };
 };
 
-const resolveWorkspaceId = async (
-  client: ReturnType<typeof createSupabaseServiceRoleClient>,
-  explicit: string | null
-): Promise<string> => {
+const resolveWorkspaceId = async (client: ServiceClient, explicit: string | null): Promise<string> => {
   if (explicit !== null) {
     return explicit;
   }
@@ -66,11 +65,7 @@ const resolveWorkspaceId = async (
   return data.id;
 };
 
-const uploadPdf = async (
-  client: ReturnType<typeof createSupabaseServiceRoleClient>,
-  storagePath: string,
-  bytes: Uint8Array
-): Promise<void> => {
+const uploadPdf = async (client: ServiceClient, storagePath: string, bytes: Uint8Array): Promise<void> => {
   const { error } = await client.storage.from("documents").upload(storagePath, bytes, {
     contentType: "application/pdf",
     upsert: true,
@@ -82,7 +77,7 @@ const uploadPdf = async (
 };
 
 const insertDocumentRow = async (
-  client: ReturnType<typeof createSupabaseServiceRoleClient>,
+  client: ServiceClient,
   args: { documentId: string; workspaceId: string; storagePath: string; filename: string }
 ): Promise<void> => {
   const { error } = await client.from("documents").insert({
@@ -99,7 +94,7 @@ const insertDocumentRow = async (
 };
 
 const fetchDocumentState = async (
-  client: ReturnType<typeof createSupabaseServiceRoleClient>,
+  client: ServiceClient,
   documentId: string
 ): Promise<{ status: string; doc_type: string | null; error_message: string | null }> => {
   const { data, error } = await client

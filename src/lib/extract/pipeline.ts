@@ -100,9 +100,14 @@ export const runExtractPipeline = async (
 
     try {
       await port.writeResult(documentId, "failed", null, message);
-    } catch {
-      // Writer errors during the failure path are intentionally swallowed;
-      // we surface the original cause so QStash can retry.
+    } catch (writerError) {
+      // Writer failed during the error path. The row may be stuck in 'processing'
+      // since QStash retries cannot reclaim a non-pending row. Surface the writer
+      // error so it's observable; we still rethrow the original cause below.
+      console.error(
+        `[extract] writeResult(failed) threw for document ${documentId}; row may be stuck in processing.`,
+        writerError
+      );
     }
 
     throw new PipelineFailedError(documentId, error, message);

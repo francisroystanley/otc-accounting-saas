@@ -54,7 +54,9 @@ export const handleExtract = async (request: Request): Promise<Response> => {
     return json({ status: "ok", finalStatus: outcome.finalStatus, documentId }, 200);
   } catch (error) {
     if (error instanceof PipelineFailedError) {
-      return json({ error: "extraction_failed", documentId, message: error.message }, 500);
+      console.error(`[extract] extraction failed for document ${documentId}:`, error);
+
+      return json({ error: "extraction_failed", documentId }, 500);
     }
 
     throw error;

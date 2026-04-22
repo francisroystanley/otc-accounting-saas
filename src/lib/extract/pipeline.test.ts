@@ -124,12 +124,22 @@ describe("runExtractPipeline — idempotent claim (critical correctness property
       return w2Result;
     });
 
-    const [firstOutcome, secondOutcome] = await Promise.all([
+    const results = await Promise.allSettled([
       runExtractPipeline({ port, extract, docTypeThreshold: DOC_TYPE_THRESHOLD }, { documentId: DOCUMENT_ID }),
       runExtractPipeline({ port, extract, docTypeThreshold: DOC_TYPE_THRESHOLD }, { documentId: DOCUMENT_ID }),
     ]);
 
-    const kinds = [firstOutcome.kind, secondOutcome.kind].sort();
+    expect(
+      results.every(r => {
+        return r.status === "fulfilled";
+      })
+    ).toBe(true);
+
+    const kinds = results
+      .flatMap(r => {
+        return r.status === "fulfilled" ? [r.value.kind] : [];
+      })
+      .sort();
 
     expect(kinds).toEqual(["already_processed", "complete"]);
     expect(extractCallCount).toBe(1);
@@ -170,7 +180,7 @@ describe("runExtractPipeline — idempotent claim (critical correctness property
 
 describe("runExtractPipeline — happy path status transitions", () => {
   const makeExtractStub = (result: ExtractionResult): ExtractFn => {
-    return vi.fn<ExtractFn>(async () => {
+    return vi.fn(async (): Promise<ExtractionResult> => {
       return result;
     });
   };
