@@ -1,0 +1,16 @@
+{
+  "_note": "Blank IRS W-2 (fw2.pdf). All data fields are unfilled on the source PDF; the harness counts extracted blanks as matches. Classification is the primary signal for this baseline fixture.",
+  "doc_type": "w2",
+  "fields": {
+    "employee_ssn": "",
+    "employer_ein": "",
+    "employer_name": "",
+    "employee_name": "",
+    "wages": 0,
+    "federal_income_tax_withheld": 0,
+    "social_security_wages": 0,
+    "social_security_tax_withheld": 0,
+    "medicare_wages": 0,
+    "medicare_tax_withheld": 0
+  }
+}

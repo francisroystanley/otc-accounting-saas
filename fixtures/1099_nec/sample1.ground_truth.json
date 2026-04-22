@@ -1,0 +1,12 @@
+{
+  "_note": "Blank IRS 1099-NEC (f1099nec.pdf). All data fields are unfilled on the source PDF; the harness counts extracted blanks as matches. Classification is the primary signal for this baseline fixture.",
+  "doc_type": "1099_nec",
+  "fields": {
+    "payer_name": "",
+    "payer_tin": "",
+    "recipient_name": "",
+    "recipient_tin": "",
+    "nonemployee_compensation": 0,
+    "federal_income_tax_withheld": 0
+  }
+}
