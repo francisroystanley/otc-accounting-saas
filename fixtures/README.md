@@ -1,6 +1,6 @@
 # Extraction fixtures
 
-PDFs and hand-keyed ground-truth files used by `npm run extract:report` to measure Gemini extraction accuracy. The harness lives at [`scripts/extract-report.ts`](../scripts/extract-report.ts) and writes [`EXTRACTION_REPORT.md`](../EXTRACTION_REPORT.md) at the repo root.
+PDFs and hand-keyed ground-truth files used by `npm run extract:report` to measure Gemini extraction accuracy. The harness lives at [`scripts/extract-report.ts`](../scripts/extract-report.ts) and writes [`docs/EXTRACTION_REPORT.md`](../docs/EXTRACTION_REPORT.md).
 
 ## Provenance and PII policy (R35)
 

@@ -23,7 +23,7 @@ import {
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(here, "..");
 const FIXTURES_DIR = path.join(REPO_ROOT, "fixtures");
-const REPORT_PATH = path.join(REPO_ROOT, "EXTRACTION_REPORT.md");
+const REPORT_PATH = path.join(REPO_ROOT, "docs", "EXTRACTION_REPORT.md");
 
 const DOC_TYPES: readonly DocType[] = ["w2", "1099_nec", "1099_misc", "k1"] as const;
 
@@ -400,17 +400,23 @@ const runReport = async (): Promise<void> => {
   const timestamp = new Date().toISOString();
   const model = process.env.GEMINI_MODEL ?? "gemini-3-flash-preview";
 
+  // Relative path from the report's directory to fixtures/README.md, so the link
+  // works regardless of where REPORT_PATH lives under the repo root.
+  const fixturesReadmeLink = path
+    .relative(path.dirname(REPORT_PATH), path.join(REPO_ROOT, "fixtures", "README.md"))
+    .replace(/\\/g, "/");
+
   const sections: string[] = [];
 
   const baselineBanner = allBlankBaseline
-    ? `> **Baseline-only:** Every ground-truth field in this run is empty/zero (blank IRS forms). Field accuracy here measures schema conformance, not real extraction quality. See \`fixtures/README.md\` "Day-1 curation backlog" for the filled-fixture TODO.`
+    ? `> **Baseline-only:** Every ground-truth field in this run is empty/zero (blank IRS forms). Field accuracy here measures schema conformance, not real extraction quality. See [fixtures/README.md](${fixturesReadmeLink}) "Day-1 curation backlog" for the filled-fixture TODO.`
     : "";
 
   sections.push(`# Extraction accuracy report
 
 _Generated: ${timestamp}_
 _Model: \`${model}\`_
-_Fixtures root: \`fixtures/\` — see [fixtures/README.md](fixtures/README.md) for provenance, schema, and the Day-1 curation backlog._
+_Fixtures root: \`fixtures/\` — see [fixtures/README.md](${fixturesReadmeLink}) for provenance, schema, and the Day-1 curation backlog._
 
 ${baselineBanner}
 
@@ -462,7 +468,7 @@ ${renderThresholdSweep(sweep)}
 
   sections.push(`## Known limitations
 
-- Baseline fixtures are blank IRS forms; see \`fixtures/README.md\` "Day-1 curation backlog" for the filled-fixture TODO that gates the ≥ 90% success criterion.
+- Baseline fixtures are blank IRS forms; see [fixtures/README.md](${fixturesReadmeLink}) "Day-1 curation backlog" for the filled-fixture TODO that gates the ≥ 90% success criterion.
 - \`_note\` keys in ground-truth files are ignored by the harness; they exist to document fixture provenance alongside the expected values.
 `);
 

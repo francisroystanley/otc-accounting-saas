@@ -1,10 +1,10 @@
 # Extraction accuracy report
 
-_Generated: 2026-04-22T05:35:48.860Z_
+_Generated: 2026-04-22T05:54:39.729Z_
 _Model: `gemini-3-flash-preview`_
-_Fixtures root: `fixtures/` — see [fixtures/README.md](fixtures/README.md) for provenance, schema, and the Day-1 curation backlog._
+_Fixtures root: `fixtures/` — see [fixtures/README.md](../fixtures/README.md) for provenance, schema, and the Day-1 curation backlog._
 
-> **Baseline-only:** Every ground-truth field in this run is empty/zero (blank IRS forms). Field accuracy here measures schema conformance, not real extraction quality. See `fixtures/README.md` "Day-1 curation backlog" for the filled-fixture TODO.
+> **Baseline-only:** Every ground-truth field in this run is empty/zero (blank IRS forms). Field accuracy here measures schema conformance, not real extraction quality. See [fixtures/README.md](../fixtures/README.md) "Day-1 curation backlog" for the filled-fixture TODO.
 
 ## Summary
 
@@ -106,5 +106,5 @@ Per-field confidence from all fixtures. "Flagged" = fields where the model's sel
 
 ## Known limitations
 
-- Baseline fixtures are blank IRS forms; see `fixtures/README.md` "Day-1 curation backlog" for the filled-fixture TODO that gates the ≥ 90% success criterion.
+- Baseline fixtures are blank IRS forms; see [fixtures/README.md](../fixtures/README.md) "Day-1 curation backlog" for the filled-fixture TODO that gates the ≥ 90% success criterion.
 - `_note` keys in ground-truth files are ignored by the harness; they exist to document fixture provenance alongside the expected values.
