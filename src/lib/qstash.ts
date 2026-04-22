@@ -1,6 +1,6 @@
 import { Client } from "@upstash/qstash";
 import "server-only";
-import { getPublicBaseUrl, getQstashToken, isQstashDisabled } from "@/lib/env";
+import { getPublicBaseUrl, getQstashToken, getQstashUrl } from "@/lib/env";
 
 const FLOW_CONTROL_KEY = "extract";
 const FLOW_CONTROL_PARALLELISM = 2;
@@ -18,8 +18,8 @@ const resolveExtractEndpointUrl = (): string => {
   return `${base}/api/extract`;
 };
 
-const publishViaQStash = async (documentId: string): Promise<void> => {
-  const client = new Client({ token: getQstashToken() });
+export const publishExtract = async (documentId: string): Promise<void> => {
+  const client = new Client({ token: getQstashToken(), baseUrl: getQstashUrl() });
 
   await client.publishJSON({
     url: resolveExtractEndpointUrl(),
@@ -27,28 +27,4 @@ const publishViaQStash = async (documentId: string): Promise<void> => {
     flowControl: { key: FLOW_CONTROL_KEY, parallelism: FLOW_CONTROL_PARALLELISM },
     retries: PUBLISH_RETRIES,
   });
-};
-
-const publishViaDirectInvoke = async (documentId: string): Promise<void> => {
-  const { handleExtract } = await import("@/app/api/extract/route");
-  const request = new Request("http://localhost/api/extract", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ documentId }),
-  });
-  const response = await handleExtract(request);
-
-  if (response.status >= 500) {
-    throw new Error(`Direct handleExtract invocation failed with status ${response.status}`);
-  }
-};
-
-export const publishExtract = async (documentId: string): Promise<void> => {
-  if (isQstashDisabled()) {
-    await publishViaDirectInvoke(documentId);
-
-    return;
-  }
-
-  await publishViaQStash(documentId);
 };

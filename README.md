@@ -57,18 +57,26 @@ vercel env add GOOGLE_GENAI_API_KEY
 vercel env add QSTASH_TOKEN
 vercel env add QSTASH_CURRENT_SIGNING_KEY
 vercel env add QSTASH_NEXT_SIGNING_KEY
-vercel env add USE_QSTASH
 ```
 
-Verify with `vercel env ls`.
+Leave `QSTASH_URL` unset in Vercel so production uses the cloud default. Verify with `vercel env ls`.
 
 ## Develop
 
+Local dev exercises the same QStash pipeline as production via the Upstash CLI emulator. Run these in **two terminals**:
+
 ```bash
+# Terminal 1 — local QStash emulator (prints the token, signing keys, and URL
+# to paste into .env.local)
+npx @upstash/qstash-cli@latest dev
+```
+
+```bash
+# Terminal 2 — Next.js
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000). If `/api/upload/finalize` returns a network error, the CLI is most likely not running — that's the signal to start it.
 
 ## Project layout
 

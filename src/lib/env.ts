@@ -57,8 +57,8 @@ export const getQstashToken = (): string => {
   return readEnv("QSTASH_TOKEN");
 };
 
-export const isQstashDisabled = (): boolean => {
-  return readEnv("USE_QSTASH", false) === "false";
+export const getQstashUrl = (): string | undefined => {
+  return readEnv("QSTASH_URL", false);
 };
 
 export const getPublicBaseUrl = (): string | null => {
