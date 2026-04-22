@@ -9,6 +9,7 @@
     "build": "next build",
     "db:types": "supabase gen types typescript --project-id sxrfmxydwavrcubvdati > src/lib/database.types.ts",
     "dev": "next dev",
+    "extract:report": "node --conditions=react-server --env-file=.env.local --import tsx scripts/extract-report.ts",
     "format": "eslint . --fix && prettier --write .",
     "format:check": "eslint . && prettier --check .",
     "lint": "tsc --noEmit && eslint .",

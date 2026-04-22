@@ -543,7 +543,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 7: Fixture harness and extraction-accuracy report**
+- [x] **Unit 7: Fixture harness and extraction-accuracy report**
 
 **Goal:** Commit 2–3 IRS sample PDFs per doc type plus hand-keyed `ground_truth.json`; implement `npm run extract:report` that measures accuracy and writes `EXTRACTION_REPORT.md`. Decide K-1 inclusion based on the report.
 

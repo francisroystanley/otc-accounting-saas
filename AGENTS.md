@@ -6,6 +6,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 <!-- END:nextjs-agent-rules -->
 
+## Documentation location
+
+All project documentation lives under `docs/` — brainstorms, plans, solutions, generated reports, briefs, and anything else. The only markdown files that stay at the repo root are `README.md` (GitHub/Vercel convention), `AGENTS.md`, and `CLAUDE.md`. When generating a new doc, default to `docs/` (or a relevant subdirectory like `docs/solutions/<category>/`).
+
 ## Documented Solutions
 
 `docs/solutions/` — documented solutions to past problems (bugs, best practices, workflow patterns), organized by category with YAML frontmatter (`module`, `tags`, `problem_type`, `component`). Relevant when implementing or debugging in documented areas.

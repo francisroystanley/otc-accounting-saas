@@ -1,0 +1,14 @@
+{
+  "_note": "Blank IRS 1099-MISC (f1099msc.pdf). All data fields are unfilled on the source PDF; the harness counts extracted blanks as matches. Classification is the primary signal for this baseline fixture.",
+  "doc_type": "1099_misc",
+  "fields": {
+    "payer_name": "",
+    "payer_tin": "",
+    "recipient_name": "",
+    "recipient_tin": "",
+    "rents": 0,
+    "royalties": 0,
+    "other_income": 0,
+    "federal_income_tax_withheld": 0
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_note": "Blank IRS Schedule K-1 Form 1065 (f1065sk1.pdf). All data fields are unfilled on the source PDF; the harness counts extracted blanks as matches. Classification is the primary signal for this baseline fixture.",
+  "doc_type": "k1",
+  "fields": {
+    "partnership_name": "",
+    "partnership_ein": "",
+    "partner_name": "",
+    "partner_tin": "",
+    "ordinary_business_income": 0,
+    "net_rental_real_estate_income": 0,
+    "interest_income": 0,
+    "dividends": 0
+  }
+}
