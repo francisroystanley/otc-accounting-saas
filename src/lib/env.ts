@@ -26,6 +26,14 @@ export const getSupabaseServiceRoleKey = (): string => {
   return readEnv("SUPABASE_SERVICE_ROLE_KEY");
 };
 
+export const getGoogleGenaiApiKey = (): string => {
+  return readEnv("GOOGLE_GENAI_API_KEY");
+};
+
+export const getGeminiModelOverride = (): string | undefined => {
+  return readOptionalEnv("GEMINI_MODEL");
+};
+
 export const getPublicBaseUrl = (): string | null => {
   const siteUrl = readOptionalEnv("NEXT_PUBLIC_SITE_URL");
 

@@ -486,7 +486,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 2 — Extraction core (Wed afternoon)
 
-- [ ] **Unit 6: Shared Gemini extraction module**
+- [x] **Unit 6: Shared Gemini extraction module**
 
 **Goal:** Build `src/lib/extraction/gemini.ts` — the single entry point for PDF extraction used by `/api/extract`, the fixture harness, and the seed script.
 
