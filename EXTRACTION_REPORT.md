@@ -1,6 +1,6 @@
 # Extraction accuracy report
 
-_Generated: 2026-04-22T05:00:46.467Z_
+_Generated: 2026-04-22T05:35:48.860Z_
 _Model: `gemini-3-flash-preview`_
 _Fixtures root: `fixtures/` — see [fixtures/README.md](fixtures/README.md) for provenance, schema, and the Day-1 curation backlog._
 
@@ -19,7 +19,7 @@ Mean per-field self-reported confidence across fixtures: **1.00**. A value close
 
 ## K-1 inclusion decision
 
-K-1 decision deferred — blank-fixture baseline shows 100.0% trivially. Re-run after filled K-1 fixtures land; if accuracy stays < 80%, drop K-1 from `src/lib/extraction/types.ts`/`schemas.ts` and propagate to U14 (CSV export).
+K-1 decision deferred — K-1 fixtures are still blank baselines (100.0% trivially). Re-run after filled K-1 fixtures land; if accuracy stays < 80%, drop K-1 from `src/lib/extraction/types.ts`/`schemas.ts` and propagate to U14 (CSV export).
 
 ## Recommended thresholds
 
@@ -37,10 +37,10 @@ Per-field confidence from all fixtures. "Flagged" = fields where the model's sel
 
 | Threshold | Flagged fields | Flagged errors / Total errors | Precision | Recall |
 | --------- | -------------- | ----------------------------- | --------- | ------ |
-| 0.70      | 0              | 0/0                           | 0.0%      | 0.0%   |
-| 0.80      | 0              | 0/0                           | 0.0%      | 0.0%   |
-| 0.85      | 0              | 0/0                           | 0.0%      | 0.0%   |
-| 0.90      | 0              | 0/0                           | 0.0%      | 0.0%   |
+| 0.70      | 0              | 0/0                           | N/A       | N/A    |
+| 0.80      | 0              | 0/0                           | N/A       | N/A    |
+| 0.85      | 0              | 0/0                           | N/A       | N/A    |
+| 0.90      | 0              | 0/0                           | N/A       | N/A    |
 
 ## Per-fixture detail
 

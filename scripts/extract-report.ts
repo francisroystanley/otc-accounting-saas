@@ -1,19 +1,24 @@
-// Extraction-accuracy harness (U7).
+// Extraction-accuracy harness. See fixtures/README.md for fixture shape.
 //
-// Walks `fixtures/<doc_type>/sampleN.pdf`, calls the shared Gemini extractor,
-// compares against the hand-keyed `sampleN.ground_truth.json`, and writes
-// `EXTRACTION_REPORT.md` with per-doc-type accuracy and a confidence-threshold
-// sweep. Each full run costs one Gemini call per fixture.
-//
-//   npm run extract:report
-//
-// Fixture format and comparison rules are documented in fixtures/README.md.
+// The npm script passes `--conditions=react-server` so Node resolves the
+// `server-only` module (imported by src/lib/extraction/gemini.ts) to its
+// empty stub instead of its throw-on-load default. The harness runs in plain
+// Node, not a Next.js RSC runtime — the condition flag is the intentional
+// bypass, not a claim that this is a server context.
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareNumberField, compareStringField } from "@/lib/extraction/fixture-match";
 import { extractFromPdfBytes } from "@/lib/extraction/gemini";
-import type { DocType, ExtractionResult } from "@/lib/extraction/types";
+import type { DocType } from "@/lib/extraction/types";
+import {
+  type FieldComparison,
+  type GroundTruth,
+  type SweepRow,
+  isBlankBaseline,
+  parseGroundTruth,
+  thresholdSweep,
+} from "./extract-report-helpers";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(here, "..");
@@ -21,20 +26,6 @@ const FIXTURES_DIR = path.join(REPO_ROOT, "fixtures");
 const REPORT_PATH = path.join(REPO_ROOT, "EXTRACTION_REPORT.md");
 
 const DOC_TYPES: readonly DocType[] = ["w2", "1099_nec", "1099_misc", "k1"] as const;
-const THRESHOLD_SWEEP = [0.7, 0.8, 0.85, 0.9] as const;
-
-type GroundTruth = {
-  doc_type: DocType | "unknown";
-  fields?: Record<string, string | number>;
-};
-
-type FieldComparison = {
-  field: string;
-  expected: string | number;
-  got: string | number | null;
-  matched: boolean;
-  confidence: number;
-};
 
 type FixtureOutcome = {
   pdf_path: string;
@@ -62,52 +53,6 @@ const readJsonUnknown = async (filePath: string): Promise<unknown> => {
   return JSON.parse(raw);
 };
 
-const VALID_DOC_TYPES: readonly string[] = ["w2", "1099_nec", "1099_misc", "k1", "unknown"];
-
-const isValidDocType = (raw: unknown): raw is DocType | "unknown" => {
-  return typeof raw === "string" && VALID_DOC_TYPES.includes(raw);
-};
-
-const parseGroundTruth = (raw: unknown, source: string): GroundTruth => {
-  if (typeof raw !== "object" || raw === null) {
-    throw new Error(`Ground truth at ${source} is not a JSON object`);
-  }
-
-  const record: Record<string, unknown> = { ...raw };
-
-  if (!isValidDocType(record.doc_type)) {
-    throw new Error(`Ground truth at ${source} has invalid doc_type: ${String(record.doc_type)}`);
-  }
-
-  const fieldsRaw = record.fields;
-  let fields: Record<string, string | number> | undefined;
-
-  if (fieldsRaw !== undefined && fieldsRaw !== null) {
-    if (typeof fieldsRaw !== "object") {
-      throw new Error(`Ground truth at ${source} has non-object "fields"`);
-    }
-
-    const entries = Object.entries(fieldsRaw);
-    const validated: Record<string, string | number> = {};
-
-    for (const [key, value] of entries) {
-      if (key.startsWith("_")) {
-        continue;
-      }
-
-      if (typeof value !== "string" && typeof value !== "number") {
-        throw new Error(`Ground truth at ${source} has non-scalar field "${key}"`);
-      }
-
-      validated[key] = value;
-    }
-
-    fields = validated;
-  }
-
-  return { doc_type: record.doc_type, fields };
-};
-
 const fileExists = async (filePath: string): Promise<boolean> => {
   return fs
     .stat(filePath)
@@ -122,7 +67,15 @@ const fileExists = async (filePath: string): Promise<boolean> => {
 type GeminiField = { value: string | number; confidence: number };
 
 const isGeminiField = (raw: unknown): raw is GeminiField => {
-  return typeof raw === "object" && raw !== null && "value" in raw && "confidence" in raw;
+  if (typeof raw !== "object" || raw === null) {
+    return false;
+  }
+
+  const record: Record<string, unknown> = { ...raw };
+  const valueType = typeof record.value;
+  const confidenceType = typeof record.confidence;
+
+  return (valueType === "string" || valueType === "number") && confidenceType === "number";
 };
 
 const compareFields = (
@@ -155,17 +108,13 @@ const compareFields = (
   });
 };
 
-const extractedDocTypeFor = (result: ExtractionResult): DocType | "unknown" => {
-  return result.doc_type;
-};
-
 const runFixture = async (pdfPath: string, groundTruth: GroundTruth): Promise<FixtureOutcome> => {
   const bytes = await fs.readFile(pdfPath);
   const relPath = path.relative(REPO_ROOT, pdfPath).replace(/\\/g, "/");
 
   try {
     const result = await extractFromPdfBytes(new Uint8Array(bytes));
-    const actualDocType = extractedDocTypeFor(result);
+    const actualDocType = result.doc_type;
     const classificationMatch = actualDocType === groundTruth.doc_type;
 
     let fieldComparisons: FieldComparison[] = [];
@@ -197,6 +146,12 @@ const runFixture = async (pdfPath: string, groundTruth: GroundTruth): Promise<Fi
   }
 };
 
+const sampleIndex = (filename: string): number => {
+  const match = filename.match(/sample(\d+)\.pdf$/i);
+
+  return match ? Number.parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER;
+};
+
 const collectFixtures = async (docType: DocType): Promise<{ pdf: string; ground_truth: string }[]> => {
   const dir = path.join(FIXTURES_DIR, docType);
 
@@ -210,23 +165,20 @@ const collectFixtures = async (docType: DocType): Promise<{ pdf: string; ground_
     .filter(name => {
       return name.toLowerCase().endsWith(".pdf");
     })
-    .sort();
+    .sort((a, b) => {
+      return sampleIndex(a) - sampleIndex(b);
+    });
 
   return Promise.all(
     pdfs.map(async name => {
       const pdfPath = path.join(dir, name);
-      const gtCandidates = [
-        path.join(dir, name.replace(/\.pdf$/i, ".ground_truth.json")),
-        path.join(dir, name.replace(/\.pdf$/i, ".groundtruth.json")),
-      ];
+      const groundTruthPath = path.join(dir, name.replace(/\.pdf$/i, ".ground_truth.json"));
 
-      const groundTruthPath = (await Promise.all(gtCandidates.map(fileExists))).findIndex(Boolean);
-
-      if (groundTruthPath === -1) {
-        throw new Error(`Missing ground truth for ${pdfPath} — expected ${gtCandidates[0]}`);
+      if (!(await fileExists(groundTruthPath))) {
+        throw new Error(`Missing ground truth for ${pdfPath} — expected ${groundTruthPath}`);
       }
 
-      return { pdf: pdfPath, ground_truth: gtCandidates[groundTruthPath] };
+      return { pdf: pdfPath, ground_truth: groundTruthPath };
     })
   );
 };
@@ -263,45 +215,12 @@ const summarizeDocType = (docType: DocType, outcomes: FixtureOutcome[]): DocType
   };
 };
 
-type SweepRow = {
-  threshold: number;
-  flagged: number;
-  errors_total: number;
-  flagged_errors: number;
-  precision: number;
-  recall: number;
-};
-
-const thresholdSweep = (allComparisons: FieldComparison[]): SweepRow[] => {
-  const totalErrors = allComparisons.filter(c => {
-    return !c.matched;
-  }).length;
-
-  return THRESHOLD_SWEEP.map(threshold => {
-    const flagged = allComparisons.filter(c => {
-      return c.confidence < threshold;
-    });
-
-    const flaggedErrors = flagged.filter(c => {
-      return !c.matched;
-    }).length;
-
-    const precision = flagged.length === 0 ? 0 : flaggedErrors / flagged.length;
-    const recall = totalErrors === 0 ? 0 : flaggedErrors / totalErrors;
-
-    return {
-      threshold,
-      flagged: flagged.length,
-      errors_total: totalErrors,
-      flagged_errors: flaggedErrors,
-      precision,
-      recall,
-    };
-  });
-};
-
 const pct = (value: number): string => {
   return `${(value * 100).toFixed(1)}%`;
+};
+
+const pctOrNA = (value: number | null): string => {
+  return value === null ? "N/A" : pct(value);
 };
 
 const renderSummaryTable = (summaries: DocTypeSummary[]): string => {
@@ -338,7 +257,7 @@ const renderPerFixture = (outcomes: FixtureOutcome[]): string => {
 
 const renderThresholdSweep = (rows: SweepRow[]): string => {
   const body = rows.map(r => {
-    return `| ${r.threshold.toFixed(2)} | ${r.flagged} | ${r.flagged_errors}/${r.errors_total} | ${pct(r.precision)} | ${pct(r.recall)} |`;
+    return `| ${r.threshold.toFixed(2)} | ${r.flagged} | ${r.flagged_errors}/${r.errors_total} | ${pctOrNA(r.precision)} | ${pctOrNA(r.recall)} |`;
   });
 
   return [
@@ -356,14 +275,17 @@ const recommendThresholds = (
 
   const bestByRecall = [...sweep]
     .filter(r => {
-      return r.errors_total > 0;
+      return r.errors_total > 0 && r.recall !== null;
     })
     .sort((a, b) => {
-      if (b.recall !== a.recall) {
-        return b.recall - a.recall;
+      const aRecall = a.recall ?? 0;
+      const bRecall = b.recall ?? 0;
+
+      if (bRecall !== aRecall) {
+        return bRecall - aRecall;
       }
 
-      return b.precision - a.precision;
+      return (b.precision ?? 0) - (a.precision ?? 0);
     })[0];
 
   const confidence = bestByRecall?.threshold ?? 0.85;
@@ -393,23 +315,19 @@ const recommendThresholds = (
   return { confidence, docType: 0.7, notes };
 };
 
-const decideK1Inclusion = (
-  summary: DocTypeSummary | undefined,
-  outcomes: FixtureOutcome[],
-  isBaseline: boolean
-): string => {
+const decideK1Inclusion = (summary: DocTypeSummary | undefined, outcomes: FixtureOutcome[]): string => {
   if (!summary || summary.fixtures === 0) {
     return "K-1 decision deferred — no K-1 fixtures measured yet.";
   }
 
   const overallAccuracy = (summary.field_accuracy + summary.classification_accuracy) / 2;
 
-  if (isBaseline) {
-    return `K-1 decision deferred — blank-fixture baseline shows ${pct(overallAccuracy)} trivially. Re-run after filled K-1 fixtures land; if accuracy stays < 80%, drop K-1 from \`src/lib/extraction/types.ts\`/\`schemas.ts\` and propagate to U14 (CSV export).`;
-  }
+  const k1Comparisons = outcomes.flatMap(o => {
+    return o.field_comparisons;
+  });
 
-  if (outcomes.length === 0) {
-    return "K-1 decision deferred — outcome list is empty.";
+  if (isBlankBaseline(k1Comparisons)) {
+    return `K-1 decision deferred — K-1 fixtures are still blank baselines (${pct(overallAccuracy)} trivially). Re-run after filled K-1 fixtures land; if accuracy stays < 80%, drop K-1 from \`src/lib/extraction/types.ts\`/\`schemas.ts\` and propagate to U14 (CSV export).`;
   }
 
   if (overallAccuracy >= 0.8) {
@@ -461,14 +379,16 @@ const runReport = async (): Promise<void> => {
     return s.doc_type === "k1";
   });
 
+  // Overall banner triggers when every comparison across every doc type is blank-baseline,
+  // or when there are zero comparisons at all (every fixture was unknown-type).
   const allBlankBaseline =
-    allComparisons.length > 0 &&
+    allComparisons.length === 0 ||
     allComparisons.every(c => {
       return c.expected === "" || c.expected === 0;
     });
 
   const k1Outcomes = outcomesByType.get("k1") ?? [];
-  const k1Decision = decideK1Inclusion(k1Summary, k1Outcomes, allBlankBaseline);
+  const k1Decision = decideK1Inclusion(k1Summary, k1Outcomes);
 
   const avgConfidence =
     allComparisons.length === 0
@@ -562,8 +482,21 @@ ${renderThresholdSweep(sweep)}
     return acc + s.total_fields + s.fixtures;
   }, 0);
 
+  const allOutcomes = Array.from(outcomesByType.values()).flat();
+
+  const erroredCount = allOutcomes.filter(o => {
+    return o.error !== undefined;
+  }).length;
+
   console.log(`\nReport written to ${path.relative(REPO_ROOT, REPORT_PATH).replace(/\\/g, "/")}`);
   console.log(`Overall match count: ${passedCount}/${totalCount}`);
+
+  if (allOutcomes.length > 0 && erroredCount === allOutcomes.length) {
+    console.error(
+      `\nAll ${allOutcomes.length} fixtures errored — report written, but exiting non-zero so CI/callers notice.`
+    );
+    process.exit(1);
+  }
 };
 
 runReport().catch((error: unknown) => {

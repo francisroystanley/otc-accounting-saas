@@ -42,10 +42,15 @@ export const compareStringField = (field: string, expected: string, got: unknown
   return normExpected === normGot;
 };
 
+// Floating-point diffs like 12345.01 - 12345 can land fractionally above 0.01.
+// The extra 1e-10 slop makes the "inclusive at the boundary" contract in
+// fixtures/README.md robust to that without loosening the real ±$0.01 limit.
+const FP_EPSILON = 1e-10;
+
 export const compareNumberField = (expected: number, got: unknown): boolean => {
   if (typeof got !== "number" || !Number.isFinite(got)) {
     return false;
   }
 
-  return Math.abs(expected - got) < NUMBER_TOLERANCE;
+  return Math.abs(expected - got) <= NUMBER_TOLERANCE + FP_EPSILON;
 };

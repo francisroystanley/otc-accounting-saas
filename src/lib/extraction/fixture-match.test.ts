@@ -28,14 +28,25 @@ describe("compareStringField", () => {
   it("fails when normalized values differ", () => {
     expect(compareStringField("employer_name", "ACME LLC", "ACME INC")).toBe(false);
   });
+
+  it("does not conflate a blank-equivalent with a real value", () => {
+    expect(compareStringField("employer_name", "N/A", "Acme Corp")).toBe(false);
+    expect(compareStringField("employer_name", "Acme Corp", "")).toBe(false);
+  });
 });
 
 describe("compareNumberField", () => {
-  it("matches within ±$0.01 tolerance", () => {
+  it("matches within ±$0.01 tolerance (inclusive at the boundary)", () => {
     expect(compareNumberField(12345, 12345)).toBe(true);
     expect(compareNumberField(12345, 12345.005)).toBe(true);
+    expect(compareNumberField(12345, 12345.01)).toBe(true);
     expect(compareNumberField(12345, 12345.02)).toBe(false);
     expect(compareNumberField(0, 0)).toBe(true);
+  });
+
+  it("handles negative values the same as positive", () => {
+    expect(compareNumberField(-100, -100.005)).toBe(true);
+    expect(compareNumberField(-100, -100.02)).toBe(false);
   });
 
   it("fails for non-finite or non-number got", () => {
@@ -43,11 +54,5 @@ describe("compareNumberField", () => {
     expect(compareNumberField(100, Number.NaN)).toBe(false);
     expect(compareNumberField(100, Infinity)).toBe(false);
     expect(compareNumberField(100, null)).toBe(false);
-  });
-
-  it("covers currency-parsed Gemini output (pre-coerced upstream)", () => {
-    // Zod coerces "$12,345.67" → 12345.67 before the harness sees it,
-    // so compareNumberField only has to handle the number side.
-    expect(compareNumberField(12345.67, 12345.67)).toBe(true);
   });
 });
