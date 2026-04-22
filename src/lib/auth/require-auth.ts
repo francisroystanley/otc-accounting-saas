@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 export type AuthenticatedContext = {
   userId: string;
   workspaceId: string;
+  email: string | null;
 };
 
 export const getAuthenticatedContext = async (): Promise<AuthenticatedContext | null> => {
@@ -20,6 +21,9 @@ export const getAuthenticatedContext = async (): Promise<AuthenticatedContext | 
     return null;
   }
 
+  const claimedEmail = claimsData.claims.email;
+  const email = typeof claimedEmail === "string" && claimedEmail !== "" ? claimedEmail : null;
+
   const { data: membership, error: membershipError } = await supabase
     .from("workspace_members")
     .select("workspace_id")
@@ -31,5 +35,5 @@ export const getAuthenticatedContext = async (): Promise<AuthenticatedContext | 
     return null;
   }
 
-  return { userId, workspaceId: membership.workspace_id };
+  return { userId, workspaceId: membership.workspace_id, email };
 };
