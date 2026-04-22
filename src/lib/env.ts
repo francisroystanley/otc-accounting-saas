@@ -1,18 +1,19 @@
-const readEnv = (name: string): string => {
+function readEnv(name: string): string;
+function readEnv(name: string, isRequired: false): string | undefined;
+
+function readEnv(name: string, isRequired = true): string | undefined {
   const value = process.env[name];
 
   if (value === undefined || value === "") {
-    throw new Error(`Missing required environment variable: ${name}`);
+    if (isRequired) {
+      throw new Error(`Missing required environment variable: ${name}`);
+    }
+
+    return undefined;
   }
 
   return value;
-};
-
-const readOptionalEnv = (name: string): string | undefined => {
-  const value = process.env[name];
-
-  return value === undefined || value === "" ? undefined : value;
-};
+}
 
 export const getSupabaseUrl = (): string => {
   const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -49,7 +50,7 @@ export const getGoogleGenaiApiKey = (): string => {
 };
 
 export const getGeminiModelOverride = (): string | undefined => {
-  return readOptionalEnv("GEMINI_MODEL");
+  return readEnv("GEMINI_MODEL", false);
 };
 
 export const getQstashToken = (): string => {
@@ -57,17 +58,17 @@ export const getQstashToken = (): string => {
 };
 
 export const isQstashDisabled = (): boolean => {
-  return readOptionalEnv("USE_QSTASH") === "false";
+  return readEnv("USE_QSTASH", false) === "false";
 };
 
 export const getPublicBaseUrl = (): string | null => {
-  const siteUrl = readOptionalEnv("NEXT_PUBLIC_SITE_URL");
+  const siteUrl = readEnv("NEXT_PUBLIC_SITE_URL", false);
 
   if (siteUrl !== undefined) {
     return siteUrl.replace(/\/$/, "");
   }
 
-  const prodUrl = readOptionalEnv("VERCEL_PROJECT_PRODUCTION_URL") ?? readOptionalEnv("VERCEL_URL");
+  const prodUrl = readEnv("VERCEL_PROJECT_PRODUCTION_URL", false) ?? readEnv("VERCEL_URL", false);
 
   if (prodUrl !== undefined) {
     return `https://${prodUrl}`;
