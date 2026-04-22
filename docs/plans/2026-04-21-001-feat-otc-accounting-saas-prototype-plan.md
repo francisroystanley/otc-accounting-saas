@@ -644,7 +644,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 3 — Upload pipeline (Thu morning)
 
-- [ ] **Unit 9: Upload API endpoints**
+- [x] **Unit 9: Upload API endpoints**
 
 **Goal:** Implement `/api/upload/sign` (mint signed upload URL + allocate `document_id`) and `/api/upload/finalize` (verify object, insert row, enqueue QStash).
 
