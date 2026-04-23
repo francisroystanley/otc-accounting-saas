@@ -1,7 +1,16 @@
 import "server-only";
 import { isSameOriginRequest } from "@/lib/auth/origin-check";
 import { getAuthenticatedContext } from "@/lib/auth/require-auth";
+import type { Json } from "@/lib/database.types";
 import { type DocumentDeletePort, type RemoveStorageResult, handleDocumentDelete } from "@/lib/documents/delete";
+import { isDocType } from "@/lib/documents/doc-types";
+import {
+  type DocumentUpdatePort,
+  type UpdateLoadedDocument,
+  type UpdateWriteResult,
+  handleDocumentUpdate,
+} from "@/lib/documents/update";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 const STORAGE_BUCKET = "documents";
@@ -129,4 +138,131 @@ export const DELETE = async (request: Request, context: { params: Promise<{ id: 
   const { id } = await context.params;
 
   return handleDocumentDelete(request, id, createRealPort());
+};
+
+const toUpdateStatus = (raw: string): UpdateLoadedDocument["status"] => {
+  if (raw === "pending" || raw === "processing" || raw === "complete" || raw === "failed" || raw === "needs_review") {
+    return raw;
+  }
+
+  throw new Error(`Unexpected document status from DB: ${raw}`);
+};
+
+const extractedDataToJson = (data: Record<string, { value: string | number; confidence: number }>): Json => {
+  const out: { [key: string]: Json } = {};
+
+  for (const [key, field] of Object.entries(data)) {
+    out[key] = { value: field.value, confidence: field.confidence };
+  }
+
+  return out;
+};
+
+const editedFieldsToJson = (edited: Record<string, true>): Json => {
+  const out: { [key: string]: Json } = {};
+
+  for (const key of Object.keys(edited)) {
+    out[key] = true;
+  }
+
+  return out;
+};
+
+const createUpdatePort = async (): Promise<DocumentUpdatePort> => {
+  // User-session client — RLS enforces workspace membership on UPDATE. Direct UPDATE
+  // (not update_extraction_result) because that function is service_role-only; user
+  // saves belong on the user-session client where RLS is the authorization fence.
+  const userClient = await createSupabaseServerClient();
+
+  return {
+    getAuthContext: async () => {
+      const ctx = await getAuthenticatedContext();
+
+      if (ctx === null) {
+        return null;
+      }
+
+      return { userId: ctx.userId, workspaceId: ctx.workspaceId };
+    },
+    checkOrigin: isSameOriginRequest,
+
+    loadDocument: async documentId => {
+      const { data, error } = await userClient
+        .from("documents")
+        .select("id, workspace_id, status, doc_type")
+        .eq("id", documentId)
+        .maybeSingle();
+
+      if (error !== null || data === null) {
+        return null;
+      }
+
+      return {
+        id: data.id,
+        workspaceId: data.workspace_id,
+        status: toUpdateStatus(data.status),
+        docType: isDocType(data.doc_type) ? data.doc_type : null,
+      };
+    },
+
+    saveEdit: async (documentId, extractedData, editedFields): Promise<UpdateWriteResult> => {
+      // Status-scoped UPDATE defends against a TOCTOU: between loadDocument and here
+      // the row could have been re-classified by a retry of /api/extract or another user.
+      // `.select("id").maybeSingle()` round-trips the matched row so the handler can
+      // detect zero-row updates and return 409 instead of falsely reporting success.
+      const { data, error } = await userClient
+        .from("documents")
+        .update({
+          extracted_data: extractedDataToJson(extractedData),
+          edited_fields: editedFieldsToJson(editedFields),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", documentId)
+        .eq("status", "complete")
+        .select("id")
+        .maybeSingle();
+
+      if (error !== null) {
+        return { ok: false, kind: "error", error: error.message };
+      }
+
+      if (data === null) {
+        return { ok: false, kind: "conflict" };
+      }
+
+      return { ok: true };
+    },
+
+    saveNeedsReviewComplete: async (documentId, docType, extractedData): Promise<UpdateWriteResult> => {
+      const { data, error } = await userClient
+        .from("documents")
+        .update({
+          status: "complete",
+          doc_type: docType,
+          extracted_data: extractedDataToJson(extractedData),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", documentId)
+        .eq("status", "needs_review")
+        .select("id")
+        .maybeSingle();
+
+      if (error !== null) {
+        return { ok: false, kind: "error", error: error.message };
+      }
+
+      if (data === null) {
+        return { ok: false, kind: "conflict" };
+      }
+
+      return { ok: true };
+    },
+  };
+};
+
+export const PATCH = async (request: Request, context: { params: Promise<{ id: string }> }): Promise<Response> => {
+  const { id } = await context.params;
+  const port = await createUpdatePort();
+
+  return handleDocumentUpdate(request, id, port);
 };

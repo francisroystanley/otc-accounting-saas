@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# compound-engineering run artifacts (per-run review/audit scratch)
+.context/

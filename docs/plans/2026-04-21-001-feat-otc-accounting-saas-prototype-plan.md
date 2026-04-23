@@ -801,7 +801,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 12: Detail view (PDF preview, edit form, confidence UI, needs_review, Next-uncertain)**
+- [x] **Unit 12: Detail view (PDF preview, edit form, confidence UI, needs_review, Next-uncertain)**
 
 **Goal:** The document detail page — side-by-side PDF preview and editable form, with per-field confidence dots, the "Next uncertain" button, the `needs_review` type-picker banner, explicit Save with unsaved-changes guard, and signed-preview-URL expiry handling.
 
