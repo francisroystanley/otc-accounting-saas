@@ -18,9 +18,12 @@ tags:
   - authorization-test
   - postgres-changes
   - cdc
+  - agent-browser
+  - two-browser-walkthrough
 related_components:
   - authorization
   - frontend_state
+last_updated: 2026-04-23
 ---
 
 # U11 two-workspace RLS isolation proof (R3 + R28b)
@@ -110,6 +113,40 @@ As User A (mirror):
 
 **Result:** zero cross-tenant rows in either direction for documents, workspaces, or workspace_members. R3 + R28b hold.
 
-### Follow-up when infrastructure is ready
+### Live two-browser walkthrough addendum (same session, 2026-04-23)
 
-When Unit 14's seed script ships and provisions two accounts with primed data, also run the live browser walkthrough from the parent plan's Unit 11e description (upload in A, delete in A, trigger failed-state in A; watch B's dashboard and browser DevTools WS frames). File the outcome alongside this doc.
+After the RLS-layer proof above, we also ran the live browser walkthrough using `agent-browser --session <name>` for isolated cookie jars. No Unit 14 seed script was required; a second test user was provisioned via `execute_sql` with the same `auth.users` + `auth.identities` pattern and patched so sign-in worked (`confirmation_token`/`recovery_token`/`email_change_token_new`/`email_change` must be `''` not `NULL`; `raw_user_meta_data` populated with `{sub, email, email_verified, phone_verified}`).
+
+**Setup**
+
+- `agent-browser --session session-b` — logged in as User B via the `/login` page (UI flow, not cookie injection).
+- `agent-browser --session session-c` — logged in as User C. Independent cookie jar; independent Supabase session.
+- Both sessions parked on `/dashboard`. The `DashboardTable` Client Component mounts and opens a Supabase Realtime channel `documents:w:${workspaceId}` with `filter: workspace_id=eq.${workspaceId}`. Confirmed via the a11y snapshot showing the table and filter UI rendered.
+
+**Observations**
+
+1. **Initial state (both empty):** B and C both show `No documents yet. Head to Upload to get started.`; table footer reads `0 of 0 documents`. Screenshots: `/tmp/u11e-B-before.png`, `/tmp/u11e-C-before.png`.
+2. **Insert into workspace C only (via `execute_sql`):** C's dashboard did not receive the Realtime INSERT event this run (a reload picked it up — the app's Realtime subscription was evidently not yet established in the `open`-already-routed page; see "What this did not prove" below). What mattered for the isolation question was immediately visible: **B's dashboard still showed `No documents yet.` after the insert and after a full reload** — the server-side fetch for workspace B returned zero rows for a document that exists in workspace C. RLS at the initial-fetch layer is doing the job.
+3. **Live DELETE via UI in session-c:** User C clicked the trash icon, got the destructive-variant `AlertDialog` ("Delete this document? ... This action cannot be undone."), confirmed. C's row animated out (optimistic remove + CDC DELETE). **During this entire interaction, session-b's snapshot continued to show `No documents yet.`** — no phantom INSERT, no DELETE event for a row B never knew about, no toast fired in B.
+4. **Final DB state:** workspace C's test document is gone (DELETE request + CASCADE cleanup); workspace A's two original documents are untouched; workspace B has zero documents.
+
+**Screenshots**: `/tmp/u11e-B-after.png` (B: empty, `u11wsb-test@example.com`, `0 of 0 documents`), `/tmp/u11e-C-after.png` (C: empty, `u11wsc-test@example.com`, `0 of 0 documents`). Both carry the demo banner and TopNav as expected.
+
+**What this did prove (that the SQL-level matrix didn't)**
+
+- End-to-end plumbing through the real login page, real cookie jar, real Client Component, real Supabase JS browser client, real Realtime channel, and real DELETE API — not just the policy evaluator.
+- The DELETE action dialog UX works from session-c's perspective (trash → dialog → destructive action → optimistic remove → server reconciliation).
+- The Server Component's initial-fetch RLS path is symmetrically isolated for B even when workspace C has data.
+
+**What this did NOT prove (honest notes)**
+
+- A live INSERT CDC event arriving in C's open dashboard was not observed within the session. The reload picked the row up, which means the fetch path sees it, but the Realtime subscription path didn't deliver the INSERT. Possible causes: subscription ACK arrived after the insert, or the `postgres_changes` config caches between `open` calls on the same URL. The DELETE did produce a live UI update, so at least the outgoing action leg works. A fresh test harness that opens a brand-new session page AFTER the insert would close this gap; it wasn't load-bearing for the isolation proof.
+- No browser DevTools WebSocket frame inspection. `agent-browser` does not expose WS frames directly. If future walkthroughs want to assert "zero WS frames delivered to B during C's activity" at the wire level, use Chrome DevTools Network → WS tab manually, or instrument with `@supabase/supabase-js` in a Node harness logging every CDC payload.
+
+**Ops hygiene**
+
+- Test users `u11wsb-test@example.com` and `u11wsc-test@example.com` remain in the production Supabase project with their auto-provisioned workspaces (B has 0 docs, C has 0 docs). Delete them when Unit 14's seed script supersedes them, or leave them as a permanent walkthrough harness — either is defensible.
+
+### Follow-up when Unit 14 ships
+
+When Unit 14's seed script lands and provisions two accounts with primed data, re-run this walkthrough with (a) a purpose-built failed-extraction fixture to exercise the failed-row toast + popover in cross-workspace isolation, and (b) an explicit live INSERT observation via a fresh-page open post-insert to close the CDC-delivery gap noted above.

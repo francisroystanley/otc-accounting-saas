@@ -390,7 +390,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ---
 
-- [x] **Unit 11e: Cross-workspace isolation verification walkthrough** _(proven at the RLS layer via `SET LOCAL request.jwt.claims` matrix on 2026-04-23; User B sees zero rows of workspace A across documents/workspaces/workspace_members, and the mirror for User A. See `docs/solutions/best-practices/u11-two-workspace-rls-isolation-proof-2026-04-23.md`. Live two-browser walkthrough still recommended when Unit 14's seed script ships.)_
+- [x] **Unit 11e: Cross-workspace isolation verification walkthrough** _(2026-04-23: both (1) the RLS-layer proof via `SET LOCAL request.jwt.claims` — zero cross-tenant rows in documents/workspaces/workspace_members in either direction, and (2) the live two-browser walkthrough using `agent-browser --session session-b` / `--session session-c` with freshly provisioned users through the real `/login` UI. Session B remained empty throughout C's insert + live DELETE action. See `docs/solutions/best-practices/u11-two-workspace-rls-isolation-proof-2026-04-23.md` for both proofs and honest gap notes.)_
 
 **Goal:** Explicit, documented two-workspace side-by-side test run that validates R3 + R17 + R28b together. This is not code — it is a documented manual test scenario the implementer runs and records the outcome of, because it is the single most important correctness guarantee for this unit per the parent plan.
 
