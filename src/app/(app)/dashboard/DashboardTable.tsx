@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DownloadIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import DashboardFilters from "@/app/(app)/dashboard/DashboardFilters";
 import DeleteDocumentButton from "@/app/(app)/dashboard/DeleteDocumentButton";
 import StatusCell from "@/app/(app)/dashboard/StatusCell";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   type DashboardSearchParams,
   type DocumentRow,
@@ -86,6 +89,56 @@ const extractDeleteIdentity = (value: unknown): DeletePayloadIdentity | null => 
   return { id: value.id, workspace_id: value.workspace_id };
 };
 
+const buildExportUrl = (params: DashboardSearchParams): string => {
+  const search = new URLSearchParams();
+
+  if (params.type !== null) {
+    search.set("type", params.type);
+  }
+
+  if (params.status !== null) {
+    search.set("status", params.status);
+  }
+
+  if (params.q !== null && params.q !== "") {
+    search.set("q", params.q);
+  }
+
+  const query = search.toString();
+
+  return query === "" ? "/api/export" : `/api/export?${query}`;
+};
+
+const FALLBACK_EXPORT_FILENAME = "otc-export.zip";
+
+const parseAttachmentFilename = (disposition: string | null): string => {
+  if (disposition === null) {
+    return FALLBACK_EXPORT_FILENAME;
+  }
+
+  // content-disposition: attachment; filename="otc-export-YYYYMMDD-HHmm.zip"
+  const match = disposition.match(/filename="([^"]+)"/);
+
+  return match === null ? FALLBACK_EXPORT_FILENAME : match[1];
+};
+
+const triggerDownload = (blob: Blob, filename: string): void => {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // Firefox aborts the in-flight download if the blob URL is revoked synchronously
+  // after click(). Defer revocation to the next tick so the browser has grabbed the
+  // blob first.
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 0);
+};
+
 const initialFailedToastedIds = (rows: DocumentRow[]): Set<string> => {
   const set = new Set<string>();
 
@@ -101,6 +154,7 @@ const initialFailedToastedIds = (rows: DocumentRow[]): Set<string> => {
 const DashboardTable = ({ workspaceId, initialRows, initialParams }: DashboardTableProps): React.ReactElement => {
   const [rows, setRows] = useState<DocumentRow[]>(initialRows);
   const [params, setParams] = useState<DashboardSearchParams>(initialParams);
+  const [isExporting, setIsExporting] = useState<boolean>(false);
 
   const failedToastedIds = useRef<Set<string>>(initialFailedToastedIds(initialRows));
   const restoreBufferRef = useRef<Map<string, DocumentRow>>(new Map());
@@ -261,6 +315,51 @@ const DashboardTable = ({ workspaceId, initialRows, initialParams }: DashboardTa
     setParams(next);
   }, []);
 
+  const handleExport = useCallback(async (): Promise<void> => {
+    setIsExporting(true);
+
+    try {
+      const response = await fetch(buildExportUrl(params), {
+        method: "GET",
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        // Race: the filtered set was non-empty when the user clicked but a concurrent
+        // delete or status change wiped it before the request hit the DB. Handle 400
+        // gracefully rather than pushing a zip with an error-JSON body onto the user.
+        let errorCode: string | null = null;
+
+        try {
+          const body: unknown = await response.json();
+
+          if (typeof body === "object" && body !== null && "error" in body && typeof body.error === "string") {
+            errorCode = body.error;
+          }
+        } catch {
+          errorCode = null;
+        }
+
+        if (errorCode === "no_documents_match") {
+          toast.error("No documents to export.");
+        } else {
+          toast.error("Export failed. Please try again.");
+        }
+
+        return;
+      }
+
+      const blob = await response.blob();
+      const filename = parseAttachmentFilename(response.headers.get("content-disposition"));
+
+      triggerDownload(blob, filename);
+    } catch {
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  }, [params]);
+
   const visibleRows = useMemo(() => {
     const filtered = filterByParams(rows, params);
     const query = params.q ?? "";
@@ -273,9 +372,50 @@ const DashboardTable = ({ workspaceId, initialRows, initialParams }: DashboardTa
   const totalCount = rows.length;
   const visibleCount = visibleRows.length;
 
+  // R14a excludes needs_review (and pending/processing/failed) from export, so the
+  // server always 400s for a filter view whose only rows are non-complete. Mirror
+  // that on the client — disable the button rather than shipping a guaranteed
+  // server rejection.
+  const exportableCount = visibleRows.filter(row => {
+    return row.status === "complete";
+  }).length;
+
+  const exportDisabledReason = exportableCount === 0 ? "No documents to export." : null;
+  const isExportDisabled = exportDisabledReason !== null || isExporting;
+
+  const exportButton = (
+    <Button
+      type="button"
+      variant="outline"
+      size="sm"
+      onClick={handleExport}
+      disabled={isExportDisabled}
+      aria-label="Export matching documents as a zip of CSVs"
+    >
+      <DownloadIcon />
+      {isExporting ? "Exporting…" : "Export CSV"}
+    </Button>
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      <DashboardFilters value={params} onChange={handleFiltersChange} />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <DashboardFilters value={params} onChange={handleFiltersChange} />
+        </div>
+        {exportDisabledReason === null ? (
+          exportButton
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span tabIndex={0}>{exportButton}</span>
+              </TooltipTrigger>
+              <TooltipContent>{exportDisabledReason}</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
 
       <div className="rounded-lg border">
         <Table>

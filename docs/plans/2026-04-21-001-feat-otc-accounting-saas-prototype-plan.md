@@ -869,7 +869,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 5 — Export (Fri morning)
 
-- [ ] **Unit 13: CSV zip export**
+- [x] **Unit 13: CSV zip export**
 
 **Goal:** `GET /api/export` returns an `application/zip` with per-doc-type CSVs, respecting current dashboard filters. Includes a client-side export button on the dashboard that surfaces filter state.
 
