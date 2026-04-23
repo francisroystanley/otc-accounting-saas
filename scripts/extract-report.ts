@@ -10,7 +10,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { compareNumberField, compareStringField } from "@/lib/extraction/fixture-match";
 import { extractFromPdfBytes } from "@/lib/extraction/gemini";
-import type { DocType } from "@/lib/extraction/types";
+import { ALL_DOC_TYPES, type DocType } from "@/lib/extraction/types";
 import {
   type FieldComparison,
   type GroundTruth,
@@ -25,7 +25,7 @@ const REPO_ROOT = path.resolve(here, "..");
 const FIXTURES_DIR = path.join(REPO_ROOT, "fixtures");
 const REPORT_PATH = path.join(REPO_ROOT, "docs", "EXTRACTION_REPORT.md");
 
-const DOC_TYPES: readonly DocType[] = ["w2", "1099_nec", "1099_misc", "k1"] as const;
+const DOC_TYPES = ALL_DOC_TYPES;
 
 type FixtureOutcome = {
   pdf_path: string;

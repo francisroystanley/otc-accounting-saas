@@ -914,7 +914,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 6 — Ship (Fri early afternoon)
 
-- [ ] **Unit 14: Seed script with two demo accounts**
+- [x] **Unit 14: Seed script with two demo accounts**
 
 **Goal:** `npm run seed` creates two pre-verified demo accounts (populated + empty), uploads fixture PDFs to the populated account, and extracts them inline (bypassing QStash). Ensures the reviewer can log into either without clicking a verification email.
 
@@ -926,16 +926,31 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 - Create: `scripts/seed-demo.ts`
 - Create: `scripts/lib/demo-users.ts` (hardcoded credentials for the two demo accounts — emailed separately to reviewer per R27)
+- Modify: `package.json` — add `"seed": "node --conditions=react-server --env-file=.env.local --import tsx scripts/seed-demo.ts"` (same invocation shape as `extract:report` so `server-only` resolves to its empty stub when the script imports `@/lib/extraction/gemini` and `@/lib/supabase/service`)
 
 **Approach:**
 
-- Script is idempotent: checks if each demo user exists; if so, deletes their workspace's documents and storage objects, then re-seeds. (Full user deletion is avoided because workspace-trigger re-creation on each run adds complexity; simpler to keep the users and reset their workspace's docs.)
-- Creates users via `supabase.auth.admin.createUser({ email_confirm: true })` — pre-verified, R4.
-- For the populated account: iterates 3–6 fixture PDFs, uploads each to Storage under `<workspace_id>/<document_id>.pdf` via service role, inserts a `documents` row, calls `extractFromPdfBytes` inline, writes the result via `update_extraction_result` (same write boundary as production, R4).
-- For the empty account: just creates the user; workspace autocreated via DB trigger.
+- Script is idempotent: checks if each demo user exists via `auth.admin.listUsers`; if so, resolves their workspace via `workspace_members`, then deletes the workspace's `documents` rows and Storage objects under `<workspace_id>/` before re-seeding. (Full user deletion is avoided because workspace-trigger re-creation on each run adds complexity; simpler to keep the users and reset their workspace's docs.)
+- Creates users via `supabase.auth.admin.createUser({ email: …, password: …, email_confirm: true })` — pre-verified, R4. The DB trigger from U3 auto-creates the workspace + `workspace_members` row.
+- For the populated account: iterates the 3–4 fixture PDFs under `fixtures/w2/`, `fixtures/1099_nec/`, `fixtures/1099_misc/`, `fixtures/k1/` (honoring the K-1 inclusion decision recorded in `EXTRACTION_REPORT.md`), and for each fixture:
+  1. Generates a fresh `documentId` (uuid).
+  2. Uploads the PDF bytes to `documents` bucket at path `<workspace_id>/<document_id>.pdf` via `supabase.storage.from('documents').upload(...)` using the service-role client (bypasses RLS, R28c).
+  3. Inserts a `documents` row with `status='pending'` (mirrors the insert boundary of `handleUploadFinalize` in `src/lib/upload/finalize.ts` — same columns: `id`, `workspace_id`, `uploaded_by`, `filename`, `storage_path`).
+  4. Claims the row via `UPDATE … SET status='processing' WHERE id=? AND status='pending'` (mirrors `claimForProcessing` in `src/lib/extract/supabase-port.ts`) so the state machine transition is identical to production.
+  5. Calls `extractFromPdfBytes(bytes)` inline (no QStash round-trip), applies the same `DOC_TYPE_THRESHOLD` logic as `runExtractPipeline` (below-threshold or `unknown` → `needs_review`, otherwise `complete`), and writes the result through the `update_extraction_result` RPC — same write boundary as `/api/extract`.
+  6. On Gemini error: writes `status='failed'` with the error message via `update_extraction_result(data=null, error=message)` and continues to the next fixture (matches production failure path).
+- For the empty account: just creates the user; workspace autocreated via DB trigger. No document or Storage writes.
 - Logs both accounts' emails and passwords at the end for copy/paste into the reviewer email.
+- Requires `SUPABASE_SERVICE_ROLE_KEY` + `NEXT_PUBLIC_SUPABASE_URL` in `.env.local` (loaded via `--env-file=.env.local`).
 
-**Patterns to follow:** Supabase admin API (`auth.admin.createUser`).
+**Patterns to follow:**
+
+- Node script invocation shape: `scripts/extract-report.ts` + its npm script in `package.json`.
+- Storage path format: `src/lib/upload/validate.ts` (`storagePathForDocument`).
+- Row insert columns: `src/lib/upload/finalize.ts` (`UploadFinalizeInsertRow`).
+- Extraction write boundary: `src/lib/extract/pipeline.ts` + `src/lib/extract/supabase-port.ts` (`writeResult` → `update_extraction_result` RPC).
+- Service-role client construction: `src/lib/supabase/service.ts`.
+- Supabase admin API: `supabase.auth.admin.createUser({ email_confirm: true })`, `supabase.auth.admin.listUsers()`.
 
 **Test scenarios:**
 

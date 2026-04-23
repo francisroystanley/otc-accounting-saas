@@ -14,6 +14,7 @@
     "format": "eslint . --fix && prettier --write .",
     "format:check": "eslint . && prettier --check .",
     "lint": "tsc --noEmit && eslint .",
+    "seed": "node --conditions=react-server --env-file=.env.local --import tsx scripts/seed-demo.ts",
     "start": "next start",
     "test": "vitest run"
   },

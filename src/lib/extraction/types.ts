@@ -54,6 +54,12 @@ export type K1Fields = {
 
 export type DocType = ExtractionResult["doc_type"];
 
+// The set of real (non-unknown) doc types the extraction pipeline supports.
+// Scripts that iterate fixture directories or CSV-export per doc type (U13,
+// scripts/extract-report.ts, scripts/seed-demo.ts) share this list so dropping
+// a doc type (e.g., K-1 per the plan's K-1 inclusion gate) happens in one place.
+export const ALL_DOC_TYPES: readonly Exclude<DocType, "unknown">[] = ["w2", "1099_nec", "1099_misc", "k1"] as const;
+
 export type ExtractionResult =
   | { doc_type: "w2"; doc_type_confidence: number; fields: W2Fields }
   | { doc_type: "1099_nec"; doc_type_confidence: number; fields: Nec1099Fields }
