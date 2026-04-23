@@ -700,7 +700,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ---
 
-- [ ] **Unit 10: Upload dropzone UI**
+- [x] **Unit 10: Upload dropzone UI**
 
 **Goal:** Build the drag-and-drop upload surface with client-side validation, batch orchestration via `Promise.allSettled`, and per-file success/error toasts. Include the demo-only banner (R35).
 
@@ -749,7 +749,7 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 ### Phase 4 — Review UI (Thu afternoon)
 
-- [ ] **Unit 11: Dashboard (list, search, filters, Realtime, delete)**
+- [x] **Unit 11: Dashboard (list, search, filters, Realtime, delete)**
 
 **Goal:** The workspace dashboard — table of documents with search, doc-type and status filters, Realtime status streaming, low-confidence count chip, row-level delete, inline failed-row error indicator.
 

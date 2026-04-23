@@ -176,7 +176,7 @@ src/
 
 Three small, dependency-ordered sub-units. All three should land as one commit; the split is for implementation focus and test locality, not for separate PRs.
 
-- [ ] **Sub-unit 10.1: `(app)` layout, DemoBanner, TopNav, dashboard move**
+- [x] **Sub-unit 10.1: `(app)` layout, DemoBanner, TopNav, dashboard move**
 
 **Goal:** Stand up the shared authed layout chrome. Move the existing dashboard page into the `(app)` route group without changing its URL. Deliver the R35 demo banner and a top-nav sign-out that replaces the inline form.
 
@@ -220,7 +220,7 @@ Three small, dependency-ordered sub-units. All three should land as one commit; 
 
 ---
 
-- [ ] **Sub-unit 10.2: pure `client-batch.ts` + Node vitest coverage**
+- [x] **Sub-unit 10.2: pure `client-batch.ts` + Node vitest coverage**
 
 **Goal:** Extract the per-file upload orchestration into a pure, Node-testable module with a typed port. Cover every error branch in `client-batch.test.ts` using fake ports. This is the load-bearing R33 test surface — the Client Component in 10.3 is a thin adapter that is not reasonably testable in this repo's Node-only vitest setup.
 
@@ -279,7 +279,7 @@ Three small, dependency-ordered sub-units. All three should land as one commit; 
 
 ---
 
-- [ ] **Sub-unit 10.3: `UploadDropzone` Client Component + `/upload` page + root `Toaster` mount**
+- [x] **Sub-unit 10.3: `UploadDropzone` Client Component + `/upload` page + root `Toaster` mount**
 
 **Goal:** Wire the pure orchestration into the DOM. Render the drop target, per-file progress rows, post-batch summary, and toasts. Mount Sonner's `<Toaster />` once in the root layout so this and future surfaces can emit toasts.
 

@@ -154,7 +154,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ## Implementation Units
 
-- [ ] **Unit 11a: Pure dashboard live-feed reducer + selectors**
+- [x] **Unit 11a: Pure dashboard live-feed reducer + selectors**
 
 **Goal:** Ship the pure, vitest-friendly module that owns the Realtime merge state machine and the derived selectors the table renders. No React, no Supabase client imports.
 
@@ -211,7 +211,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ---
 
-- [ ] **Unit 11b: Server Component + Client Component shell (initial fetch, wiring, URL params)**
+- [x] **Unit 11b: Server Component + Client Component shell (initial fetch, wiring, URL params)**
 
 **Goal:** Replace the dashboard stub with a functional Server Component that reads URL params, runs the initial query, and hands off to a Client Component that reconciles Realtime events via Unit 11a's reducer.
 
@@ -278,7 +278,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ---
 
-- [ ] **Unit 11c: Pure DELETE handler (port + orchestration)**
+- [x] **Unit 11c: Pure DELETE handler (port + orchestration)**
 
 **Goal:** Ship the pure `handleDocumentDelete(request, port)` that the DELETE route will adapt. No `server-only` imports, fully unit-testable.
 
@@ -335,7 +335,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ---
 
-- [ ] **Unit 11d: DELETE route adapter + DeleteDocumentButton**
+- [x] **Unit 11d: DELETE route adapter + DeleteDocumentButton**
 
 **Goal:** Wire the pure handler to the real service-role client via a port assembled in the route file; add the shadcn `AlertDialog` button that calls it from the table.
 
@@ -390,7 +390,7 @@ The dashboard must satisfy: R15 (searchable filterable table), R16 (search + fil
 
 ---
 
-- [ ] **Unit 11e: Cross-workspace isolation verification walkthrough**
+- [x] **Unit 11e: Cross-workspace isolation verification walkthrough** _(proven at the RLS layer via `SET LOCAL request.jwt.claims` matrix on 2026-04-23; User B sees zero rows of workspace A across documents/workspaces/workspace_members, and the mirror for User A. See `docs/solutions/best-practices/u11-two-workspace-rls-isolation-proof-2026-04-23.md`. Live two-browser walkthrough still recommended when Unit 14's seed script ships.)_
 
 **Goal:** Explicit, documented two-workspace side-by-side test run that validates R3 + R17 + R28b together. This is not code — it is a documented manual test scenario the implementer runs and records the outcome of, because it is the single most important correctness guarantee for this unit per the parent plan.
 
