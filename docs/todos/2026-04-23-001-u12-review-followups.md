@@ -9,7 +9,42 @@ source: .context/compound-engineering/ce-review/20260423-144346-87e80bc1/summary
 
 # U12 ce:review follow-ups
 
-These are the unresolved actionable findings from the ce:review of U12 (branch `feat/u12-detail-view`). Safe auto-fixes landed in-place; these items were deferred because they require product decisions, larger refactors, or scope the autofix mode declined to widen.
+Full audit trail of the ce:review pass on U12 (branch `feat/u12-detail-view`).
+Resolved items landed in the U12 commit (`9379fc0`); deferred items require product
+decisions, larger refactors, or scope the autofix mode declined to widen.
+
+## Resolved during ce:review autofix
+
+- [x] **TOCTOU guard on PATCH UPDATEs.** `saveEdit` and `saveNeedsReviewComplete`
+      now scope the UPDATE with `.eq("status", <expectedStatus>)` and
+      `.select("id").maybeSingle()`. Zero-row result surfaces as `409
+    conflict_status_changed`. (adv-u12-01, adv-u12-06, rel-7 →
+      `src/app/api/documents/[id]/route.ts`, `src/lib/documents/update.ts`)
+
+- [x] **Empty numeric persists as `""` instead of `0`.** `buildStoredExtractedData`
+      in `form-schemas.ts` distinguishes "user cleared the field" from "user
+      confirmed zero". Test pins both branches. (C2 → `form-schemas.ts`)
+
+- [x] **Per-doc-type field allow-list on PATCH.** Handler rejects `extracted_data`
+      or `edited_fields` keys outside `FIELD_NAMES_BY_DOC_TYPE[docType]` with
+      `400 unknown_fields`. Plus `z.string().max(500)` cap on value strings.
+      Defense-in-depth over the column-grant fence. Live-verified: 501-char
+      value → 400. (adv-u12-05, agent-native W2, security-1 → `update.ts`)
+
+- [x] **Shared `doc-types.ts` module.** `DocType`, `SUPPORTED_DOC_TYPES`,
+      `isDocType`, and `FIELD_NAMES_BY_DOC_TYPE` now live in one place. No more
+      duplication across form-schemas, update.ts, and live-feed.
+      (k-ts-1 → `src/lib/documents/doc-types.ts`)
+
+- [x] **`to:` → `expected:` on 409 transition errors.** The edit branch was
+      returning `to: "complete"` when the row was already complete — misleading.
+      Now returns `expected: "complete"` / `expected: "needs_review"`.
+      (api-contract-4 → `update.ts`)
+
+- [x] **Dead `pendingPick` prop removed from `NeedsReviewPicker`.** The picker is
+      only mounted while `pickedType === null`, so the prop was provably always
+      null and the `draft === pendingPick` disabled check was unreachable.
+      (C7, M1 → `NeedsReviewPicker.tsx`, `DocumentDetail.tsx`)
 
 ## P1
 
