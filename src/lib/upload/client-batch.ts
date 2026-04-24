@@ -227,3 +227,41 @@ export const userMessageForCode = (code: string): string => {
 
   return USER_MESSAGES[code];
 };
+
+export type BatchSummary = {
+  succeeded: number;
+  failed: number;
+  message: string;
+  tone: "success" | "error";
+};
+
+export const summarizeBatchResults = (results: UploadOneResult[]): BatchSummary => {
+  let succeeded = 0;
+  let failed = 0;
+
+  for (const result of results) {
+    if (result.ok) {
+      succeeded += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  if (succeeded === 0 && failed === 0) {
+    return { succeeded: 0, failed: 0, message: "", tone: "success" };
+  }
+
+  if (failed === 0) {
+    const noun = succeeded === 1 ? "file" : "files";
+
+    return { succeeded, failed, message: `Queued ${succeeded} ${noun}`, tone: "success" };
+  }
+
+  if (succeeded === 0) {
+    return { succeeded, failed, message: `All ${failed} uploads failed`, tone: "error" };
+  }
+
+  const total = succeeded + failed;
+
+  return { succeeded, failed, message: `Queued ${succeeded} of ${total}; ${failed} failed`, tone: "error" };
+};

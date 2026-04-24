@@ -4,9 +4,11 @@ import {
   type PutResult,
   USER_MESSAGE_FALLBACK,
   type UploadBatchPort,
+  type UploadOneResult,
   type UploadStage,
   preCheckBatch,
   preCheckFile,
+  summarizeBatchResults,
   uploadOne,
   userMessageForCode,
 } from "@/lib/upload/client-batch";
@@ -409,5 +411,81 @@ describe("userMessageForCode", () => {
     const message = userMessageForCode("totally_made_up_code");
 
     expect(message).toBe(USER_MESSAGE_FALLBACK);
+  });
+});
+
+describe("summarizeBatchResults", () => {
+  const succeeded = (filename: string): UploadOneResult => {
+    return { ok: true, documentId: DOCUMENT_ID, filename };
+  };
+
+  const failed = (filename: string, code = "network_error"): UploadOneResult => {
+    return { ok: false, filename, code };
+  };
+
+  it("returns a plural 'Queued N files' success summary when every result succeeds", () => {
+    const summary = summarizeBatchResults([succeeded("a.pdf"), succeeded("b.pdf"), succeeded("c.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 3,
+      failed: 0,
+      message: "Queued 3 files",
+      tone: "success",
+    });
+  });
+
+  it("uses the singular 'Queued 1 file' form when exactly one result succeeds", () => {
+    const summary = summarizeBatchResults([succeeded("only.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 1,
+      failed: 0,
+      message: "Queued 1 file",
+      tone: "success",
+    });
+  });
+
+  it("reports an 'All N uploads failed' error when every result fails", () => {
+    const summary = summarizeBatchResults([failed("a.pdf"), failed("b.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 0,
+      failed: 2,
+      message: "All 2 uploads failed",
+      tone: "error",
+    });
+  });
+
+  it("reports a mixed 'Queued N of M; K failed' error when some results fail", () => {
+    const summary = summarizeBatchResults([succeeded("ok.pdf"), failed("bad.pdf"), failed("bad2.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 1,
+      failed: 2,
+      message: "Queued 1 of 3; 2 failed",
+      tone: "error",
+    });
+  });
+
+  it("still uses the mixed form for a single success and single failure", () => {
+    const summary = summarizeBatchResults([succeeded("ok.pdf"), failed("bad.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 1,
+      failed: 1,
+      message: "Queued 1 of 2; 1 failed",
+      tone: "error",
+    });
+  });
+
+  it("returns an empty message for an empty result list so callers skip the toast", () => {
+    const summary = summarizeBatchResults([]);
+
+    expect(summary).toEqual({
+      succeeded: 0,
+      failed: 0,
+      message: "",
+      tone: "success",
+    });
   });
 });
