@@ -1,0 +1,14 @@
+{
+  "_note": "Synthetic-filled IRS Schedule K-1 (Form 1065) template (base PDF from irs.gov/pub/irs-pdf/f1065sk1.pdf, Page 1 Parts I/II/III filled). Values are fabricated — no PII. Line mapping: ordinary_business_income=Line 1, net_rental_real_estate_income=Line 2, interest_income=Line 5, dividends=Line 6a.",
+  "doc_type": "k1",
+  "fields": {
+    "partnership_name": "Cascade Bay Partners LP",
+    "partnership_ein": "34-5678901",
+    "partner_name": "Jordan Castellanos",
+    "partner_tin": "234-56-7890",
+    "ordinary_business_income": 42500,
+    "net_rental_real_estate_income": 3200,
+    "interest_income": 875,
+    "dividends": 1240
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "_note": "Synthetic-filled IRS 1099-MISC template (base PDF from irs.gov/pub/irs-pdf/f1099msc.pdf, Copy A filled). Values are fabricated — no PII.",
+  "doc_type": "1099_misc",
+  "fields": {
+    "payer_name": "Harborview Realty Co",
+    "payer_tin": "91-2345678",
+    "recipient_name": "Morgan Delacroix",
+    "recipient_tin": "789-01-2345",
+    "rents": 24000,
+    "royalties": 1500,
+    "other_income": 350,
+    "federal_income_tax_withheld": 0
+  }
+}
