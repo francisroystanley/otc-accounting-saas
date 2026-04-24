@@ -62,6 +62,13 @@ cp .env.example .env.local
 # Fill in the values. Every key is documented inline in .env.example.
 ```
 
+**Optional — OAuth sign-in providers.** "Continue with Google" and "Continue with Microsoft" buttons on `/login` and `/signup` are enabled when the corresponding provider credentials are set:
+
+- `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID` + `SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET`
+- `SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID` + `SUPABASE_AUTH_EXTERNAL_AZURE_SECRET` (+ optional `SUPABASE_AUTH_EXTERNAL_AZURE_URL` for single-tenant setups)
+
+Provider-app creation (Google Cloud Console, Azure App Registration) and Supabase Dashboard configuration for production are covered in [docs/solutions/best-practices/oauth-google-microsoft-supabase-setup-2026-04-24.md](docs/solutions/best-practices/oauth-google-microsoft-supabase-setup-2026-04-24.md). Email + password sign-in works without any of these vars set.
+
 ### 4. Apply the database schema and seed demo data
 
 ```bash
@@ -184,7 +191,7 @@ Each call site does the RLS-enforced authorization check **before** reaching for
 
 Every requirement from the origin document (R1–R35) is addressed:
 
-- **Auth & isolation (R1–R3, R28a, R28b, R28e, R28f, R34):** email+password via Supabase Auth; workspaces auto-created on first signup via a Postgres trigger on `auth.users` (SECURITY DEFINER, race-free); RLS on `documents` and `workspace_members`; Storage RLS mirrors DB RLS; all IDs server-generated via `gen_random_uuid()`; `update_extraction_result` is SECURITY DEFINER with `SET search_path = ''` and `service_role`-only grant.
+- **Auth & isolation (R1–R3, R28a, R28b, R28e, R28f, R34):** email+password + Google / Microsoft OAuth via Supabase Auth; workspaces auto-created on first signup via a Postgres trigger on `auth.users` (SECURITY DEFINER, race-free) — the trigger fires for OAuth signups as well; RLS on `documents` and `workspace_members`; Storage RLS mirrors DB RLS; all IDs server-generated via `gen_random_uuid()`; `update_extraction_result` is SECURITY DEFINER with `SET search_path = ''` and `service_role`-only grant.
 - **Seeded demo accounts (R4, R27):** two accounts — `populated` (pre-filled with extracted fixtures) and `empty` (proves R3 isolation). Credentials in the reviewer email.
 - **Upload pipeline (R5–R8, R10):** drag-and-drop dropzone, per-file 10 MB cap, per-batch 10-file cap, PDF magic-bytes + MIME + extension checks, direct-to-Storage signed uploads, workspace-path-prefix enforced on both `sign` and `finalize`.
 - **Async extraction (R9, R11, R12):** QStash Flow Control parallelism 2; `/api/extract` idempotent claim + inline Gemini call + `update_extraction_result` write. Failure path writes `status='failed'` with `error_message` via the same function.
@@ -198,7 +205,7 @@ Every requirement from the origin document (R1–R35) is addressed:
 
 From the origin document's Scope Boundaries:
 
-- QuickBooks Online OAuth; Microsoft/Google OAuth sign-in
+- QuickBooks Online OAuth (Microsoft/Google OAuth sign-in is now supported — see [setup](#3-configure-local-environment))
 - Multi-user firms / roles UI (schema supports `workspace_members`, UI does not)
 - PDF bounding-box annotation; Excel/CSV ingestion
 - Audit log UI, transactional email, Sentry/PostHog

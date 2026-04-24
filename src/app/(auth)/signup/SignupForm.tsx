@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { type AuthActionState, signUpAction } from "@/app/actions/auth";
+import OAuthButtons from "@/components/auth/OAuthButtons";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,13 @@ const SignupForm = () => {
         <CardTitle>Create an account</CardTitle>
         <CardDescription>OTC Accounting — private beta.</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-col gap-4">
+        <OAuthButtons />
+        <div className="flex items-center gap-3 text-xs uppercase" aria-hidden="true">
+          <span className="bg-border h-px flex-1" />
+          <span className="text-muted-foreground tracking-wider">or continue with email</span>
+          <span className="bg-border h-px flex-1" />
+        </div>
         <form action={action} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
