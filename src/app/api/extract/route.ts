@@ -54,9 +54,13 @@ export const handleExtract = async (request: Request): Promise<Response> => {
     return json({ status: "ok", finalStatus: outcome.finalStatus, documentId }, 200);
   } catch (error) {
     if (error instanceof PipelineFailedError) {
-      console.error(`[extract] extraction failed for document ${documentId}:`, error);
+      console.error(`[extract] outcome=extraction_failed documentId=${documentId}`, error);
 
-      return json({ error: "extraction_failed", documentId }, 500);
+      // The pipeline already wrote status='failed' via writeResult before throwing.
+      // Return 200 so QStash treats the delivery as done and does not burn the
+      // retries:3 budget on a deterministic failure. User-initiated retry is the
+      // recovery path (see docs/plans/2026-04-24-005-feat-retry-p1-hardening-plan.md).
+      return json({ status: "failed", reason: "extraction_failed", documentId }, 200);
     }
 
     throw error;
