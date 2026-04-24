@@ -5,7 +5,9 @@ import { DownloadIcon } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import DashboardFilters from "@/app/(app)/dashboard/DashboardFilters";
+import DashboardStats from "@/app/(app)/dashboard/DashboardStats";
 import DeleteDocumentButton from "@/app/(app)/dashboard/DeleteDocumentButton";
+import EmptyState from "@/app/(app)/dashboard/EmptyState";
 import StatusCell from "@/app/(app)/dashboard/StatusCell";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -399,6 +401,8 @@ const DashboardTable = ({ workspaceId, initialRows, initialParams }: DashboardTa
 
   return (
     <div className="flex flex-col gap-4">
+      <DashboardStats rows={rows} />
+
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-1">
           <DashboardFilters value={params} onChange={handleFiltersChange} />
@@ -431,10 +435,8 @@ const DashboardTable = ({ workspaceId, initialRows, initialParams }: DashboardTa
           <TableBody>
             {visibleRows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-muted-foreground py-12 text-center">
-                  {totalCount === 0
-                    ? "No documents yet. Head to Upload to get started."
-                    : "No documents match the current filters."}
+                <TableCell colSpan={5} className="p-0">
+                  <EmptyState variant={totalCount === 0 ? "no-documents" : "no-matches"} />
                 </TableCell>
               </TableRow>
             ) : (

@@ -1,14 +1,14 @@
-import { TriangleAlertIcon } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
 const DemoBanner = (): React.ReactElement => {
   return (
-    <Alert className="border-yellow-400 bg-yellow-50 text-yellow-900 dark:border-yellow-700 dark:bg-yellow-950/40 dark:text-yellow-100">
-      <TriangleAlertIcon className="text-yellow-600 dark:text-yellow-300" />
-      <AlertDescription className="text-yellow-900 dark:text-yellow-100">
-        Demo only: synthetic PDFs &mdash; do not upload real tax documents.
-      </AlertDescription>
-    </Alert>
+    <div className="bg-card text-card-foreground relative flex items-center gap-3 overflow-hidden rounded-md border py-2 pr-3 pl-4 text-sm">
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400" />
+      <span className="inline-flex items-center rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-amber-700 uppercase ring-1 ring-amber-500/30 dark:bg-amber-400/10 dark:text-amber-200 dark:ring-amber-400/30">
+        Demo
+      </span>
+      <span className="text-muted-foreground">
+        Synthetic IRS sample PDFs only &mdash; do not upload real tax documents.
+      </span>
+    </div>
   );
 };
 

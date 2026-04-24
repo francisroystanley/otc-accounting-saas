@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import DashboardTable from "@/app/(app)/dashboard/DashboardTable";
+import PageHeader from "@/components/PageHeader";
 import { getAuthenticatedContext } from "@/lib/auth/require-auth";
 import { type DocumentRow, parseDashboardSearchParams } from "@/lib/dashboard/live-feed";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -37,11 +38,12 @@ const DashboardPage = async ({ searchParams }: DashboardPageProps): Promise<Reac
   const initialRows = await fetchInitialRows(auth.workspaceId);
 
   return (
-    <div className="flex flex-1 flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold">Your documents</h1>
-        <p className="text-muted-foreground text-sm">Realtime status for everything uploaded into this workspace.</p>
-      </div>
+    <div className="flex flex-1 flex-col gap-8">
+      <PageHeader
+        eyebrow="Workspace"
+        title="Documents"
+        description="Realtime status for everything uploaded into this workspace — upload, classify, review, export."
+      />
       <DashboardTable workspaceId={auth.workspaceId} initialRows={initialRows} initialParams={initialParams} />
     </div>
   );
