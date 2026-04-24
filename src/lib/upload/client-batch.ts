@@ -258,7 +258,9 @@ export const summarizeBatchResults = (results: UploadOneResult[]): BatchSummary 
   }
 
   if (succeeded === 0) {
-    return { succeeded, failed, message: `All ${failed} uploads failed`, tone: "error" };
+    const noun = failed === 1 ? "upload" : "uploads";
+
+    return { succeeded, failed, message: `All ${failed} ${noun} failed`, tone: "error" };
   }
 
   const total = succeeded + failed;

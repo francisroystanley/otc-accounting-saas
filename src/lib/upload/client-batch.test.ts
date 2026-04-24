@@ -456,6 +456,17 @@ describe("summarizeBatchResults", () => {
     });
   });
 
+  it("uses the singular 'All 1 upload failed' form when exactly one result fails", () => {
+    const summary = summarizeBatchResults([failed("only.pdf")]);
+
+    expect(summary).toEqual({
+      succeeded: 0,
+      failed: 1,
+      message: "All 1 upload failed",
+      tone: "error",
+    });
+  });
+
   it("reports a mixed 'Queued N of M; K failed' error when some results fail", () => {
     const summary = summarizeBatchResults([succeeded("ok.pdf"), failed("bad.pdf"), failed("bad2.pdf")]);
 

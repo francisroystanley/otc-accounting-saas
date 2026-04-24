@@ -228,16 +228,10 @@ const UploadDropzone = (): React.ReactElement => {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
-  const rowsRef = useRef<RowState[]>([]);
+  const inFlightRef = useRef(0);
   const mountedRef = useRef(true);
 
-  useEffect((): void => {
-    rowsRef.current = rows;
-  }, [rows]);
-
   useEffect((): (() => void) => {
-    mountedRef.current = true;
-
     return (): void => {
       mountedRef.current = false;
     };
@@ -268,15 +262,13 @@ const UploadDropzone = (): React.ReactElement => {
       return;
     }
 
-    const inFlight = rowsRef.current.filter((row: RowState): boolean => {
-      return !isTerminal(row.status);
-    }).length;
-
-    if (inFlight + accepted.length > GLOBAL_IN_FLIGHT_CEILING) {
+    if (inFlightRef.current + accepted.length > GLOBAL_IN_FLIGHT_CEILING) {
       toast.error("Too many uploads in flight. Wait for some to finish before dropping more.");
 
       return;
     }
+
+    inFlightRef.current += accepted.length;
 
     const seededRows: RowState[] = accepted.map((file: File): RowState => {
       return {
@@ -316,27 +308,31 @@ const UploadDropzone = (): React.ReactElement => {
       return result;
     });
 
-    void Promise.allSettled(tasks).then(settled => {
-      const results: UploadOneResult[] = settled.map(entry => {
-        if (entry.status === "fulfilled") {
-          return entry.value;
+    void Promise.allSettled(tasks)
+      .then(settled => {
+        const results: UploadOneResult[] = settled.map(entry => {
+          if (entry.status === "fulfilled") {
+            return entry.value;
+          }
+
+          return { ok: false, filename: "", code: "network_error" };
+        });
+
+        const summary = summarizeBatchResults(results);
+
+        if (!mountedRef.current || summary.message === "") {
+          return;
         }
 
-        return { ok: false, filename: "", code: "network_error" };
+        if (summary.tone === "success") {
+          toast.success(summary.message);
+        } else {
+          toast.error(summary.message);
+        }
+      })
+      .finally(() => {
+        inFlightRef.current -= accepted.length;
       });
-
-      const summary = summarizeBatchResults(results);
-
-      if (!mountedRef.current || summary.message === "") {
-        return;
-      }
-
-      if (summary.tone === "success") {
-        toast.success(summary.message);
-      } else {
-        toast.error(summary.message);
-      }
-    });
   }, []);
 
   const onDragEnter = (event: React.DragEvent<HTMLLabelElement>): void => {
