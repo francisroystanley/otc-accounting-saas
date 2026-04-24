@@ -1,4 +1,5 @@
 import type { Tables } from "@/lib/database.types";
+import { isDocType } from "@/lib/documents/doc-types";
 
 export type DocumentRow = Tables<"documents">;
 
@@ -115,6 +116,34 @@ const extractConfidence = (field: unknown): number | null => {
   }
 
   return confidence;
+};
+
+// Derived UI state: a `needs_review` row whose doc_type is unknown/unsupported AND whose
+// wrapped `extracted_data.fields` is null. This is the Gemini "couldn't recognize this"
+// shape (blank PDF, unsupported form, poorly-scanned page) — rendered as a distinct
+// "Unrecognized" pill in the dashboard and a dedicated empty-state panel on the detail
+// page. The status gate MUST stay first: user-edited `complete` rows store a flat field
+// bag with no `fields` wrapper, so clause 3 would misfire without the status check.
+export const isUnrecognized = (row: DocumentRow): boolean => {
+  if (row.status !== "needs_review") {
+    return false;
+  }
+
+  // `!isDocType(...)` matches null, "unknown", and any arbitrary string not in
+  // SUPPORTED_DOC_TYPES. `DocumentRow.doc_type` is `string | null` in the DB, so arbitrary
+  // strings are possible (future pipeline variants, manual rows, schema drift) — they all
+  // route here. Note: `isDocType` is used with NEGATION to match the mirror case of
+  // `buildInitialsForEdit` in `DocumentDetail.tsx`, which uses `isDocType` positively to
+  // narrow to known types. Do not drop the negation.
+  if (isDocType(row.doc_type)) {
+    return false;
+  }
+
+  if (!isRecord(row.extracted_data)) {
+    return false;
+  }
+
+  return row.extracted_data.fields === null;
 };
 
 export const countLowConfidence = (row: DocumentRow, threshold: number): number => {

@@ -7,6 +7,7 @@ import DocumentDetailHeader from "@/app/(app)/documents/[id]/DocumentDetailHeade
 import ExtractedFieldsForm from "@/app/(app)/documents/[id]/ExtractedFieldsForm";
 import NeedsReviewPicker from "@/app/(app)/documents/[id]/NeedsReviewPicker";
 import PdfPreview from "@/app/(app)/documents/[id]/PdfPreview";
+import UnrecognizedEmptyState from "@/app/(app)/documents/[id]/UnrecognizedEmptyState";
 import {
   type DocType,
   type FormValues,
@@ -26,7 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import type { DocumentRow } from "@/lib/dashboard/live-feed";
+import { type DocumentRow, isUnrecognized } from "@/lib/dashboard/live-feed";
 
 type DocumentDetailProps = {
   row: DocumentRow;
@@ -174,6 +175,8 @@ const DocumentDetail = ({ row }: DocumentDetailProps): React.ReactElement => {
   const formMode: "edit" | "complete_from_needs_review" =
     row.status === "complete" ? "edit" : "complete_from_needs_review";
 
+  const isUnrecognizedRow = isUnrecognized(row);
+
   return (
     <TooltipProvider>
       <div className="flex flex-1 flex-col gap-4">
@@ -185,11 +188,13 @@ const DocumentDetail = ({ row }: DocumentDetailProps): React.ReactElement => {
           </div>
 
           <div className="flex flex-col gap-4">
-            {row.status === "needs_review" && pickedType === null ? (
+            {isUnrecognizedRow ? <UnrecognizedEmptyState documentId={row.id} filename={row.filename} /> : null}
+
+            {row.status === "needs_review" && !isUnrecognizedRow && pickedType === null ? (
               <NeedsReviewPicker onPick={handlePickType} />
             ) : null}
 
-            {row.status === "needs_review" && pickedType !== null && inputs !== null ? (
+            {row.status === "needs_review" && !isUnrecognizedRow && pickedType !== null && inputs !== null ? (
               <ExtractedFieldsForm
                 key={`needs-review-${pickedType}`}
                 documentId={row.id}

@@ -1,22 +1,16 @@
+// This module imports "server-only" and is untestable by vitest directly — the
+// guard throws at import time under Node's default export condition. Pure
+// helpers (ExtractionError, classifySdkError, copy map) live in ./errors so
+// they can be unit-tested in isolation. See
+// docs/solutions/best-practices/server-only-bypass-from-node-and-vitest-2026-04-22.md
 import { GoogleGenAI } from "@google/genai";
 import "server-only";
 import { getGeminiModelOverride, getGoogleGenaiApiKey } from "@/lib/env";
 import { DEFAULT_GEMINI_MODEL } from "@/lib/extraction/config";
+import { ExtractionError, classifySdkError } from "@/lib/extraction/errors";
 import { EXTRACTION_SYSTEM_PROMPT } from "@/lib/extraction/prompt";
 import { geminiResponseSchema, parseExtractionResult } from "@/lib/extraction/schemas";
 import type { ExtractionResult } from "@/lib/extraction/types";
-
-export type ExtractionErrorKind = "sdk_error" | "empty_response" | "invalid_json" | "schema_mismatch";
-
-export class ExtractionError extends Error {
-  readonly kind: ExtractionErrorKind;
-
-  constructor(kind: ExtractionErrorKind, message: string, options?: { cause?: unknown }) {
-    super(message, options);
-    this.name = "ExtractionError";
-    this.kind = kind;
-  }
-}
 
 const toBase64 = (bytes: Uint8Array): string => {
   return Buffer.from(bytes).toString("base64");
@@ -50,13 +44,13 @@ export const extractFromPdfBytes = async (bytes: Uint8Array): Promise<Extraction
       },
     })
     .catch((error: unknown): never => {
-      throw new ExtractionError("sdk_error", "Gemini generateContent failed", { cause: error });
+      throw new ExtractionError(classifySdkError(error), { cause: error });
     });
 
   const text = response.text;
 
   if (typeof text !== "string" || text.length === 0) {
-    throw new ExtractionError("empty_response", "Gemini returned an empty response");
+    throw new ExtractionError("empty_response");
   }
 
   let raw: unknown;
@@ -64,12 +58,12 @@ export const extractFromPdfBytes = async (bytes: Uint8Array): Promise<Extraction
   try {
     raw = JSON.parse(text);
   } catch (error) {
-    throw new ExtractionError("invalid_json", "Gemini response was not valid JSON", { cause: error });
+    throw new ExtractionError("invalid_json", { cause: error });
   }
 
   try {
     return parseExtractionResult(raw);
   } catch (error) {
-    throw new ExtractionError("schema_mismatch", "Gemini response did not match expected schema", { cause: error });
+    throw new ExtractionError("schema_mismatch", { cause: error });
   }
 };

@@ -1,10 +1,10 @@
 "use client";
 
-import { AlertCircleIcon } from "lucide-react";
+import { AlertCircleIcon, FileQuestionIcon } from "lucide-react";
 import ConfidenceCountChip from "@/app/(app)/dashboard/ConfidenceCountChip";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { type DocumentRow, countLowConfidence } from "@/lib/dashboard/live-feed";
+import { type DocumentRow, countLowConfidence, isUnrecognized } from "@/lib/dashboard/live-feed";
 import { CONFIDENCE_THRESHOLD } from "@/lib/extraction/config";
 
 type StatusCellProps = {
@@ -30,6 +30,17 @@ const statusVariant: Record<DocumentRow["status"], BadgeVariant> = {
 };
 
 const StatusCell = ({ row }: StatusCellProps): React.ReactElement => {
+  if (isUnrecognized(row)) {
+    return (
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="text-muted-foreground gap-1">
+          <FileQuestionIcon className="size-3.5" aria-hidden />
+          Unrecognized
+        </Badge>
+      </div>
+    );
+  }
+
   const label = statusLabel[row.status];
   const variant = statusVariant[row.status];
   const lowConfidence = countLowConfidence(row, CONFIDENCE_THRESHOLD);

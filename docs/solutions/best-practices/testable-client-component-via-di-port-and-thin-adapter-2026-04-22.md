@@ -163,6 +163,8 @@ const USER_MESSAGES: Readonly<Record<KnownCode, string>> = {
 
 Then the exhaustiveness test asserts `.not.toBe(USER_MESSAGE_FALLBACK)` per code, so it actually fails when a key is removed (rather than passing through the fallback string).
 
+The same `Record<Kind, string>` shape applies one boundary deeper — at the DB write where the extraction pipeline persists user-facing error copy. See [friendly-error-messages-via-write-boundary-transformation](./friendly-error-messages-via-write-boundary-transformation-2026-04-24.md) for the server-side application: a typed `ExtractionError` whose message is auto-derived from its kind, paired with structural SDK-error classification and `Error.cause` preservation for operator logs.
+
 ## Why This Matters
 
 The instinct to mock at the component boundary or install jsdom is the wrong reach. It costs more and tests less. The pure-orchestration layer is already the part you actually want coverage on — the error-path matrix, the port-call sequencing, the step short-circuits, the user-message mapping. The Client Component is 80% rendering and event wiring, which React's own invariants cover.
