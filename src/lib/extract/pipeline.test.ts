@@ -8,6 +8,7 @@ import {
   PipelineFailedError,
   runExtractPipeline,
 } from "@/lib/extract/pipeline";
+import { ExtractionError, userMessageForExtractionKind } from "@/lib/extraction/errors";
 import type { ExtractionResult } from "@/lib/extraction/types";
 
 const WORKSPACE_ID = "aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa";
@@ -344,10 +345,10 @@ describe("runExtractPipeline — authorization", () => {
 });
 
 describe("runExtractPipeline — extraction failures", () => {
-  it("writes 'failed' and rethrows PipelineFailedError when extract throws", async () => {
+  it("writes the ExtractionError's friendly message when extract throws an ExtractionError", async () => {
     const store = makeStore();
     const port = makePort(store);
-    const extractError = new Error("Gemini 429");
+    const extractError = new ExtractionError("sdk_retryable", { cause: new Error("original") });
 
     const extract: ExtractFn = vi.fn(async () => {
       throw extractError;
@@ -362,11 +363,29 @@ describe("runExtractPipeline — extraction failures", () => {
     expect(row?.writes).toHaveLength(1);
     expect(row?.writes[0]?.status).toBe("failed");
     expect(row?.writes[0]?.data).toBeNull();
-    expect(row?.writes[0]?.errorMessage).toBe("Gemini 429");
+    expect(row?.writes[0]?.errorMessage).toBe(userMessageForExtractionKind("sdk_retryable"));
     expect(row?.snapshot.status).toBe("failed");
   });
 
-  it("writes 'failed' when the storage download throws", async () => {
+  it("writes the pipeline_unknown friendly copy when extract throws a generic non-ExtractionError", async () => {
+    const store = makeStore();
+    const port = makePort(store);
+
+    const extract: ExtractFn = vi.fn(async () => {
+      throw new Error("random internal error with implementation detail");
+    });
+
+    await expect(
+      runExtractPipeline({ port, extract, docTypeThreshold: DOC_TYPE_THRESHOLD }, { documentId: DOCUMENT_ID })
+    ).rejects.toBeInstanceOf(PipelineFailedError);
+
+    const row = store.documents.get(DOCUMENT_ID);
+
+    expect(row?.writes[0]?.errorMessage).toBe(userMessageForExtractionKind("pipeline_unknown"));
+    expect(row?.writes[0]?.errorMessage).not.toContain("implementation detail");
+  });
+
+  it("writes the pipeline_unknown friendly copy when the storage download throws", async () => {
     const store = makeStore();
     const port = makePort(store);
 
@@ -381,8 +400,25 @@ describe("runExtractPipeline — extraction failures", () => {
     const row = store.documents.get(DOCUMENT_ID);
 
     expect(row?.writes[0]?.status).toBe("failed");
-    expect(row?.writes[0]?.errorMessage).toContain("Storage object");
+    expect(row?.writes[0]?.errorMessage).toBe(userMessageForExtractionKind("pipeline_unknown"));
     expect(extract).not.toHaveBeenCalled();
+  });
+
+  it("writes the pipeline_unknown friendly copy when a non-Error value is thrown", async () => {
+    const store = makeStore();
+    const port = makePort(store);
+
+    const extract: ExtractFn = vi.fn(async () => {
+      throw "raw string thrown from somewhere";
+    });
+
+    await expect(
+      runExtractPipeline({ port, extract, docTypeThreshold: DOC_TYPE_THRESHOLD }, { documentId: DOCUMENT_ID })
+    ).rejects.toBeInstanceOf(PipelineFailedError);
+
+    const row = store.documents.get(DOCUMENT_ID);
+
+    expect(row?.writes[0]?.errorMessage).toBe(userMessageForExtractionKind("pipeline_unknown"));
   });
 
   it("still throws PipelineFailedError even if the failure-path writer also throws", async () => {
@@ -397,7 +433,7 @@ describe("runExtractPipeline — extraction failures", () => {
     };
 
     const extract: ExtractFn = vi.fn(async () => {
-      throw new Error("Gemini 500");
+      throw new ExtractionError("sdk_unrecoverable");
     });
 
     await expect(

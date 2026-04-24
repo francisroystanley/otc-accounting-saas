@@ -1,3 +1,4 @@
+import { ExtractionError, PIPELINE_UNKNOWN_KIND, userMessageForExtractionKind } from "@/lib/extraction/errors";
 import type { ExtractionResult } from "@/lib/extraction/types";
 
 export type DocumentStatus = "pending" | "processing" | "complete" | "failed" | "needs_review";
@@ -53,11 +54,11 @@ export type RunExtractPipelineDeps = {
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const extractMessage = (error: unknown): string => {
-  if (error instanceof Error) {
+  if (error instanceof ExtractionError) {
     return error.message;
   }
 
-  return "Extraction pipeline failed";
+  return userMessageForExtractionKind(PIPELINE_UNKNOWN_KIND);
 };
 
 export const runExtractPipeline = async (
