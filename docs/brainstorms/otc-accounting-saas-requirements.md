@@ -92,7 +92,7 @@ A working deployed URL with strict multi-tenant isolation, real async processing
 - R23. The app is deployed to a working Vercel URL the reviewer can open.
 - R24. Repo is pushed to GitHub with `alex@owntheclimb.com` invited as collaborator.
 - R25. README covers setup, architecture, what was built, what was intentionally not built (and why), and known issues.
-- R26. A 3–5 minute Loom walkthrough demonstrates the product end to end. The Loom is treated as the primary sales artifact (per Problem Frame) and must cover: problem framing, end-to-end happy path with live Realtime status transitions, the confidence-UI trust moment, the two-account isolation test, and a reference to `EXTRACTION_REPORT.md`. A detailed beat list (timing, narration, demo-fixture choice) lives in `docs/loom-script.md`, produced late in the build once the working product is in hand — keeping it out of the requirements doc avoids locking narrative structure to a script written before the product exists.
+- R26. A 3–5 minute Loom walkthrough demonstrates the product end to end. The Loom is treated as the primary sales artifact (per Problem Frame) and must cover: problem framing, end-to-end happy path with live Realtime status transitions, the confidence-UI trust moment, the two-account isolation test, and a reference to `EXTRACTION_REPORT.md`.
 - R27. All required credentials (Supabase URL + anon + service role keys, Gemini API key, QStash keys, test account logins) are emailed separately to the reviewer.
 
 **Security Boundaries**

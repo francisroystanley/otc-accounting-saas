@@ -977,7 +977,6 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 **Files:**
 
 - Modify: `README.md` (final content: setup, architecture with service-role inventory per R28c, what was built, what was intentionally not built, known issues, demo banner rationale, extract-report doc)
-- Create: `docs/loom-script.md` (beat list per R26: problem framing, happy path with Realtime, confidence-UI trust moment, two-account isolation test, reference to EXTRACTION_REPORT.md)
 - Modify: `EXTRACTION_REPORT.md` (final commit — re-generated against the final schema and fixture set)
 
 **Approach (time-boxed — Fri 13:00 → 15:00 EDT, 2 hours total):**
@@ -989,11 +988,10 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 | 13:40–14:00 | Final `npm run extract:report` run against the final schema; commit `EXTRACTION_REPORT.md`.                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | 14:00–14:15 | `vercel --prod` deploy; smoke test the production URL from an incognito window. Invite `alex@owntheclimb.com` to the GitHub repo.                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 14:15–14:25 | README final pass: "Setup" (env vars, `supabase db push`, `npm run seed`, `npm run dev`), "Architecture" (HLD diagram from this plan, three Supabase clients, service-role inventory per R28c), "What was built" (bullet list of R's satisfied), "What was intentionally not built" (Scope Boundaries from this plan), "Known issues" (R35 accepted risks + 4.5 MB export ceiling + iOS Safari iframe PDF + QStash global Flow Control key + no migration rollback), "Extraction quality" (summary stats from `EXTRACTION_REPORT.md`). |
-| 14:25–14:35 | Write `docs/loom-script.md` beat list (timing, narration, which demo fixtures).                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 14:35–14:55 | Record Loom against the populated demo account. One take; re-record only for catastrophic fumbles. Target 4 minutes.                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 14:25–14:55 | Record Loom against the populated demo account. One take; re-record only for catastrophic fumbles. Target 4 minutes.                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 14:55–15:00 | Email `alex@owntheclimb.com` with: prod URL, repo URL, Loom link, both demo credentials, Supabase URL + publishable + service-role keys, Gemini API key, QStash keys (R27).                                                                                                                                                                                                                                                                                                                                                            |
 
-- If any time bucket overruns, the fallback cut in Risks applies: skip the `EXTRACTION_REPORT.md` re-run (commit the last successful one), trim the Loom script to 3 minutes, and defer any non-critical error-handling polish.
+- If any time bucket overruns, the fallback cut in Risks applies: skip the `EXTRACTION_REPORT.md` re-run (commit the last successful one), trim the Loom walkthrough to 3 minutes, and defer any non-critical error-handling polish.
 
 **Test scenarios:**
 
@@ -1092,7 +1090,6 @@ Units are grouped into phases that align with the 3-day timeline. Units within a
 
 - **README.md** — the only reviewer-facing doc. Must cover setup, architecture (with diagrams from this plan's HLD section), service-role inventory (R28c), what was / wasn't built, known issues (R35 accepted risks + export ceiling), and extraction quality summary.
 - **EXTRACTION_REPORT.md** — committed at submission (R13a rationale record).
-- **docs/loom-script.md** — internal artifact; not part of the reviewer email.
 - **`.env.example`** — list of required keys with comments.
 - **Inline code comments** — only at the SECURITY DEFINER function, the three Supabase clients, and the QStash receiver's idempotent claim. These are the non-obvious security boundaries and merit a one-line WHY.
 

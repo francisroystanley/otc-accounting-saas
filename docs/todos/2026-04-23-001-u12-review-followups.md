@@ -18,7 +18,7 @@ decisions, larger refactors, or scope the autofix mode declined to widen.
 - [x] **TOCTOU guard on PATCH UPDATEs.** `saveEdit` and `saveNeedsReviewComplete`
       now scope the UPDATE with `.eq("status", <expectedStatus>)` and
       `.select("id").maybeSingle()`. Zero-row result surfaces as `409
-    conflict_status_changed`. (adv-u12-01, adv-u12-06, rel-7 →
+conflict_status_changed`. (adv-u12-01, adv-u12-06, rel-7 →
       `src/app/api/documents/[id]/route.ts`, `src/lib/documents/update.ts`)
 
 - [x] **Empty numeric persists as `""` instead of `0`.** `buildStoredExtractedData`

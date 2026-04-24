@@ -1,6 +1,6 @@
 # Extraction accuracy report
 
-_Generated: 2026-04-22T05:54:39.729Z_
+_Generated: 2026-04-24T01:00:11.611Z_
 _Model: `gemini-3-flash-preview`_
 _Fixtures root: `fixtures/` — see [fixtures/README.md](../fixtures/README.md) for provenance, schema, and the Day-1 curation backlog._
 
