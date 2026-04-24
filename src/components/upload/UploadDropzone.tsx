@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { CheckCircle2Icon, OctagonXIcon, UploadCloudIcon } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -13,6 +13,7 @@ import {
   type UploadOneResult,
   type UploadStage,
   preCheckBatch,
+  summarizeBatchResults,
   uploadOne,
   userMessageForCode,
 } from "@/lib/upload/client-batch";
@@ -20,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 const STORAGE_BUCKET = "documents";
 const PDF_CONTENT_TYPE = "application/pdf";
+const GLOBAL_IN_FLIGHT_CEILING = 20;
 
 const signResponseSchema = z.discriminatedUnion("ok", [
   z.object({
@@ -226,6 +228,20 @@ const UploadDropzone = (): React.ReactElement => {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
+  const rowsRef = useRef<RowState[]>([]);
+  const mountedRef = useRef(true);
+
+  useEffect((): void => {
+    rowsRef.current = rows;
+  }, [rows]);
+
+  useEffect((): (() => void) => {
+    mountedRef.current = true;
+
+    return (): void => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const handleBatch = useCallback((fileList: FileList | null): void => {
     if (fileList === null || fileList.length === 0) {
@@ -249,6 +265,16 @@ const UploadDropzone = (): React.ReactElement => {
     }
 
     if (accepted.length === 0) {
+      return;
+    }
+
+    const inFlight = rowsRef.current.filter((row: RowState): boolean => {
+      return !isTerminal(row.status);
+    }).length;
+
+    if (inFlight + accepted.length > GLOBAL_IN_FLIGHT_CEILING) {
+      toast.error("Too many uploads in flight. Wait for some to finish before dropping more.");
+
       return;
     }
 
@@ -287,16 +313,30 @@ const UploadDropzone = (): React.ReactElement => {
 
       dispatch({ type: "settle", rowId, result });
 
-      if (result.ok) {
-        toast.success(`Queued: ${result.filename}`);
-      } else {
-        toast.error(`${result.filename} — ${userMessageForCode(result.code)}`);
-      }
-
       return result;
     });
 
-    void Promise.allSettled(tasks);
+    void Promise.allSettled(tasks).then(settled => {
+      const results: UploadOneResult[] = settled.map(entry => {
+        if (entry.status === "fulfilled") {
+          return entry.value;
+        }
+
+        return { ok: false, filename: "", code: "network_error" };
+      });
+
+      const summary = summarizeBatchResults(results);
+
+      if (!mountedRef.current || summary.message === "") {
+        return;
+      }
+
+      if (summary.tone === "success") {
+        toast.success(summary.message);
+      } else {
+        toast.error(summary.message);
+      }
+    });
   }, []);
 
   const onDragEnter = (event: React.DragEvent<HTMLLabelElement>): void => {
@@ -350,7 +390,7 @@ const UploadDropzone = (): React.ReactElement => {
         <UploadCloudIcon className="text-muted-foreground size-8" aria-hidden />
         <div className="flex flex-col gap-1">
           <span className="text-base font-medium">Drop PDFs here or click to choose</span>
-          <span className="text-muted-foreground text-xs">Up to 10 files, 10 MB each</span>
+          <span className="text-muted-foreground text-xs">Up to 10 files per drop, 10 MB each</span>
         </div>
         <input
           id="upload-input"
