@@ -1,0 +1,12 @@
+{
+  "_note": "Synthetic-filled IRS 1099-NEC template (base PDF from irs.gov/pub/irs-pdf/f1099nec.pdf, Copy A filled). Values are fabricated — no PII.",
+  "doc_type": "1099_nec",
+  "fields": {
+    "payer_name": "Summit Consulting LLC",
+    "payer_tin": "45-6789012",
+    "recipient_name": "Avery Okonkwo",
+    "recipient_tin": "456-78-9012",
+    "nonemployee_compensation": 18400,
+    "federal_income_tax_withheld": 920
+  }
+}

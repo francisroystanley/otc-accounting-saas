@@ -1,0 +1,16 @@
+{
+  "_note": "Synthetic-filled IRS W-2 template (base PDF from irs.gov/pub/irs-pdf/fw2.pdf, Copy A filled). Values are fabricated — no PII. Employer/employee names, SSN, EIN, and all monetary amounts were written by scripts/generate-filled-fixtures.mjs.",
+  "doc_type": "w2",
+  "fields": {
+    "employee_ssn": "321-54-9876",
+    "employer_ein": "87-6543210",
+    "employer_name": "Northwind Traders Inc",
+    "employee_name": "Riley Nakamura",
+    "wages": 72500.5,
+    "federal_income_tax_withheld": 8125.4,
+    "social_security_wages": 72500.5,
+    "social_security_tax_withheld": 4495.03,
+    "medicare_wages": 72500.5,
+    "medicare_tax_withheld": 1051.26
+  }
+}

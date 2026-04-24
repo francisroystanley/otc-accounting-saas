@@ -4,7 +4,7 @@ PDFs and hand-keyed ground-truth files used by `npm run extract:report` to measu
 
 ## Provenance and PII policy (R35)
 
-Source PDFs **must** come from public IRS materials — blank published forms (`irs.gov/pub/irs-pdf/`) or filled-in samples from IRS instruction booklets. Never commit real taxpayer data. The blank forms in this tree are downloaded verbatim from:
+Source PDFs **must** come from public IRS materials — blank published forms (`irs.gov/pub/irs-pdf/`), filled-in samples from IRS instruction booklets, or synthetic-filled derivatives of the blanks produced by `scripts/generate-filled-fixtures.mjs` (the base PDF remains the public IRS template; the script only writes AcroForm text fields, with fabricated non-PII values). Never commit real taxpayer data. The blank forms in this tree are downloaded verbatim from:
 
 | File                             | Source                                         |
 | -------------------------------- | ---------------------------------------------- |
@@ -12,6 +12,12 @@ Source PDFs **must** come from public IRS materials — blank published forms (`
 | `fixtures/1099_nec/sample1.pdf`  | <https://www.irs.gov/pub/irs-pdf/f1099nec.pdf> |
 | `fixtures/1099_misc/sample1.pdf` | <https://www.irs.gov/pub/irs-pdf/f1099msc.pdf> |
 | `fixtures/k1/sample1.pdf`        | <https://www.irs.gov/pub/irs-pdf/f1065sk1.pdf> |
+
+`sample2.pdf` in each directory is a synthetic-filled version produced from `sample1.pdf`. To regenerate after editing the generator's synthetic values:
+
+```bash
+node scripts/generate-filled-fixtures.mjs
+```
 
 ## Adding a new fixture
 
@@ -55,6 +61,10 @@ The exact field set depends on `doc_type`. See [`src/lib/extraction/types.ts`](.
 - **Blank value:** an empty string in ground truth matches any of `""`, `"N/A"`, or `"—"` from Gemini; `0` in ground truth matches `0`.
 - **Confidence:** not compared — we measure extraction accuracy, not calibration. Calibration is the separate threshold-sweep section of the report.
 
-## Day-1 curation backlog
+## Curation backlog
 
-Blank forms measure classification + schema conformance but cannot stress-test field extraction — unfilled boxes trivially match. Before the ≥ 90% success criterion can be demonstrated end-to-end, add **filled-in** samples sourced from IRS instruction booklets (e.g. Publication 17 appendices, `i1099gi.pdf`, `i1065.pdf`) and hand-key their ground truth. The harness will then produce a meaningful accuracy number instead of a baseline.
+Initial filled fixtures are now in place (`sample2.pdf` per doc type) via `scripts/generate-filled-fixtures.mjs`. Next iterations:
+
+- Add filled specimens from IRS instruction booklets (e.g. Publication 17 appendices, `i1099gi.pdf`, `i1065.pdf`) to cover handwritten / scanned visual styles that AcroForm-filled PDFs don't stress-test.
+- Grow to 3–5 filled fixtures per doc type so the threshold sweep has enough field-count to produce non-trivial precision/recall.
+- Add `unknown` fixtures (receipts, non-tax docs) to stress-test the fail-soft classifier branch.
