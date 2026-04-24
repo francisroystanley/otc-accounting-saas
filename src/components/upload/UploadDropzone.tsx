@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useReducer, useRef, useState } from "react";
 import { CheckCircle2Icon, OctagonXIcon, UploadCloudIcon } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -221,32 +221,14 @@ const putToStorage = async (token: string, file: File, storagePath: string): Pro
   return { ok: true };
 };
 
-const hasPendingRows = (rows: RowState[]): boolean => {
-  return rows.some((row: RowState): boolean => {
-    return !isTerminal(row.status);
-  });
-};
-
 const UploadDropzone = (): React.ReactElement => {
   const [rows, dispatch] = useReducer(rowsReducer, []);
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
-  const rowsRef = useRef<RowState[]>([]);
-  const activeRowIdsRef = useRef<Set<string>>(new Set());
-
-  useEffect((): void => {
-    rowsRef.current = rows;
-  }, [rows]);
 
   const handleBatch = useCallback((fileList: FileList | null): void => {
     if (fileList === null || fileList.length === 0) {
-      return;
-    }
-
-    if (hasPendingRows(rowsRef.current)) {
-      toast.error("Wait for the current batch to finish before dropping more files.");
-
       return;
     }
 
@@ -281,10 +263,6 @@ const UploadDropzone = (): React.ReactElement => {
       };
     });
 
-    for (const row of seededRows) {
-      activeRowIdsRef.current.add(row.rowId);
-    }
-
     dispatch({ type: "add", rows: seededRows });
 
     const tasks = accepted.map(async (file: File, index: number): Promise<UploadOneResult> => {
@@ -309,12 +287,10 @@ const UploadDropzone = (): React.ReactElement => {
 
       dispatch({ type: "settle", rowId, result });
 
-      if (activeRowIdsRef.current.has(rowId)) {
-        if (result.ok) {
-          toast.success(`Queued: ${result.filename}`);
-        } else {
-          toast.error(`${result.filename} — ${userMessageForCode(result.code)}`);
-        }
+      if (result.ok) {
+        toast.success(`Queued: ${result.filename}`);
+      } else {
+        toast.error(`${result.filename} — ${userMessageForCode(result.code)}`);
       }
 
       return result;
