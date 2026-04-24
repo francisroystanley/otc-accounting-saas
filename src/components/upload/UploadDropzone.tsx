@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { CheckCircle2Icon, OctagonXIcon, UploadCloudIcon } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Button } from "@/components/ui/button";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   type FinalizeResult,
@@ -18,6 +16,7 @@ import {
   uploadOne,
   userMessageForCode,
 } from "@/lib/upload/client-batch";
+import { cn } from "@/lib/utils";
 
 const STORAGE_BUCKET = "documents";
 const PDF_CONTENT_TYPE = "application/pdf";
@@ -240,12 +239,6 @@ const UploadDropzone = (): React.ReactElement => {
     rowsRef.current = rows;
   }, [rows]);
 
-  const isBatchComplete =
-    rows.length > 0 &&
-    rows.every((row: RowState): boolean => {
-      return isTerminal(row.status);
-    });
-
   const handleBatch = useCallback((fileList: FileList | null): void => {
     if (fileList === null || fileList.length === 0) {
       return;
@@ -364,11 +357,6 @@ const UploadDropzone = (): React.ReactElement => {
     }
   };
 
-  const onReset = (): void => {
-    activeRowIdsRef.current.clear();
-    dispatch({ type: "reset" });
-  };
-
   return (
     <div className="flex flex-col gap-6">
       <label
@@ -377,9 +365,10 @@ const UploadDropzone = (): React.ReactElement => {
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`border-muted-foreground/30 hover:border-muted-foreground/60 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-12 text-center transition-colors ${
+        className={cn(
+          "border-muted-foreground/30 hover:border-muted-foreground/60 flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed px-6 py-12 text-center transition-colors",
           isDragging ? "border-primary bg-primary/5" : "bg-muted/20"
-        }`}
+        )}
         aria-label="Drop PDFs or click to choose"
       >
         <UploadCloudIcon className="text-muted-foreground size-8" aria-hidden />
@@ -408,7 +397,7 @@ const UploadDropzone = (): React.ReactElement => {
                 </span>
                 <div className="bg-muted h-1.5 w-32 overflow-hidden rounded-full">
                   <div
-                    className={`h-full transition-all ${row.status === "failed" ? "bg-destructive" : "bg-primary"}`}
+                    className={cn("h-full transition-all", row.status === "failed" ? "bg-destructive" : "bg-primary")}
                     style={{ width: `${row.percent}%` }}
                   />
                 </div>
@@ -424,17 +413,6 @@ const UploadDropzone = (): React.ReactElement => {
             );
           })}
         </ul>
-      ) : null}
-
-      {isBatchComplete ? (
-        <div className="flex items-center justify-end gap-3">
-          <Button variant="outline" size="sm" onClick={onReset}>
-            Upload more
-          </Button>
-          <Button asChild size="sm">
-            <Link href="/dashboard">View dashboard</Link>
-          </Button>
-        </div>
       ) : null}
     </div>
   );

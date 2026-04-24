@@ -347,7 +347,7 @@ const seedDemoUser = async (client: Client, user: DemoUser, fixturePaths: string
   }
 };
 
-const REQUIRED_ENV_VARS = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "GEMINI_API_KEY"] as const;
+const REQUIRED_ENV_VARS = ["NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "GOOGLE_GENAI_API_KEY"] as const;
 
 const assertEnv = (): void => {
   const missing = REQUIRED_ENV_VARS.filter(name => {

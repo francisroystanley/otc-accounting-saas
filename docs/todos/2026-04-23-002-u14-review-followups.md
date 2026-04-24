@@ -59,7 +59,7 @@ findings deliberately deferred.
 
 - [x] **#6 — Fail-fast env precondition.** `assertEnv()` runs at the top of
       `run()`, checking `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-      and `GEMINI_API_KEY`. Missing vars throw a seed-specific actionable
+      and `GOOGLE_GENAI_API_KEY`. Missing vars throw a seed-specific actionable
       error mentioning `.env.local`.
       (→ `scripts/seed-demo.ts`)
 
