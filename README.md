@@ -31,7 +31,7 @@ git clone <repo-url>
 cd otc-accounting-saas
 npm install
 npm run lint        # tsc --noEmit && eslint .
-npm run test        # vitest, 278 tests
+npm run test        # vitest, 308 tests
 npm run build       # next build
 ```
 
@@ -135,10 +135,15 @@ Browser ──sign──▶ /api/upload/sign ──▶ Supabase Storage (direct 
 
 ```
 pending ──claim──▶ processing ──┬──▶ complete       (high-confidence path)
-                                ├──▶ needs_review    (doc_type='unknown' OR doc_type_confidence < threshold)
+                                ├──▶ needs_review    (doc_type_confidence < threshold)
                                 │        │ user picks type + saves
                                 │        └────────▶ complete
-                                └──▶ failed          (after QStash exhausts 3 retries)
+                                ├──▶ needs_review    (doc_type='unknown' — Unrecognized PDF UX)
+                                │        │ user deletes from detail page
+                                │        └────────▶ (row + Storage object removed)
+                                └──▶ failed          (deterministic pipeline failure; /api/extract
+                                                      returns 200 to preserve the QStash retry budget
+                                                      for transient transport errors only)
 ```
 
 `update_extraction_result` (SECURITY DEFINER, `service_role` grant only) is the sole extraction-result write path. User edits on `complete` rows use a direct `UPDATE` via the user-session client — RLS enforces workspace membership.
@@ -169,6 +174,9 @@ Each call site does the RLS-enforced authorization check **before** reaching for
 - **Gemini SDK = `@google/genai`** (not the deprecated `@google/generative-ai`). Model is env-flippable via `GEMINI_MODEL`; default `gemini-3-flash-preview`, fallback `gemini-2.5-flash` if the preview model is retired.
 - **Shared extraction core** — `src/lib/extraction/gemini.ts` is consumed by `/api/extract`, `scripts/extract-report.ts`, and `scripts/seed-demo.ts`. Prompt, schema, and Zod validation stay in sync across all three.
 - **Idempotent QStash claim** — `UPDATE documents SET status='processing' WHERE id=$1 AND status='pending'`. Zero rows changed → 200 no-op (duplicate delivery); one row claimed → proceed.
+- **QStash retry budget preserved for transient faults** — deterministic pipeline failures (e.g. Gemini schema rejection, unrecoverable SDK error) write `status='failed'` via `update_extraction_result` and return 200 so QStash treats the delivery as done. The 3-retry budget is reserved for transient transport errors only; user-initiated retry is the recovery path for deterministic failures.
+- **Friendly extraction errors** — `src/lib/extraction/errors.ts` maps each extraction failure kind to user-facing copy at the write boundary, and splits Gemini SDK errors into retryable vs. unrecoverable by HTTP status before persisting.
+- **Unrecognized PDF UX** — when Gemini returns `doc_type='unknown'`, the document lands in `needs_review` with a distinct pill on the dashboard and a dedicated empty state on the detail page (`UnrecognizedEmptyState`) that offers a confirmed-delete path instead of a type picker.
 - **CSV export** — `jszip` buffers the per-doc-type CSVs in memory; demo-scale (≤100 docs) stays under the 4.5 MB Vercel response-body cap. Values are sanitized against formula injection (leading `=`, `+`, `-`, `@`, `\t`, `\r`).
 - **Strict TypeScript** — `no-explicit-any: error` and `consistent-type-assertions: ['error', { assertionStyle: 'never' }]`. Zero `: any` and zero bare `as` casts in `src/`.
 
@@ -194,7 +202,7 @@ From the origin document's Scope Boundaries:
 - Multi-user firms / roles UI (schema supports `workspace_members`, UI does not)
 - PDF bounding-box annotation; Excel/CSV ingestion
 - Audit log UI, transactional email, Sentry/PostHog
-- Comprehensive automated test coverage — per-unit targeted tests only (278 tests, not a full suite)
+- Comprehensive automated test coverage — per-unit targeted tests only (308 tests, not a full suite)
 - Rate limiting / Arcjet
 - OCR pre-pass (Gemini vision handles scanned PDFs)
 - Custom animations beyond shadcn defaults; custom domain
@@ -254,18 +262,23 @@ The harness is **not** CI-wired — it consumes Gemini quota and its value is in
 src/
   app/
     (app)/                  # authed routes: dashboard, upload, document detail
+      documents/[id]/       # detail view: DocumentDetail, DocumentDetailHeader,
+                            # ExtractedFieldsForm, NeedsReviewPicker,
+                            # UnrecognizedEmptyState, unrecognized-copy, PdfPreview
     (auth)/                 # login, signup
     actions/                # Server Actions (auth)
     api/                    # route handlers: upload, extract, documents, export
     auth/confirm/           # email confirmation callback
   components/
+    Brand.tsx               # wordmark
     DemoBanner.tsx          # R35 accepted-risk banner
-    TopNav.tsx
+    PageHeader.tsx          # eyebrow + title shell
+    TopNav.tsx TopNavLinks  # top nav shell + active-route links
     ui/                     # shadcn/ui components
     upload/                 # dropzone
   lib/
     supabase/               # three clients: browser, server, service-role
-    extraction/             # shared Gemini module + schemas + prompt
+    extraction/             # shared Gemini module + schemas + prompt + errors.ts (user-copy mapping)
     auth/                   # SSR auth helpers
     documents/ export/ upload/ extract/  # domain helpers
     database.types.ts       # generated Supabase types
@@ -277,9 +290,10 @@ scripts/
   seed-demo.ts              # demo account seeder (npm run seed)
 fixtures/                   # IRS public sample PDFs + ground-truth JSON
 docs/
-  plans/                    # implementation plan (parent + U15)
+  plans/                    # implementation plans (parent + U-series)
   brainstorms/              # requirements source of truth
   solutions/                # documented learnings from prior units
+  todos/                    # per-unit review follow-ups
   EXTRACTION_REPORT.md      # fixture accuracy snapshot
 ```
 

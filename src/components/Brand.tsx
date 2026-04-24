@@ -22,7 +22,7 @@ const markSize: Record<NonNullable<BrandProps["size"]>, string> = {
 const Wordmark = ({ size }: { size: NonNullable<BrandProps["size"]> }): React.ReactElement => {
   return (
     <span className="inline-flex items-center gap-2.5">
-      <span aria-hidden="true" className={cn("bg-brand rounded-[2px]", markSize[size])} />
+      <span aria-hidden="true" className={cn("bg-brand rounded-xs", markSize[size])} />
       <span className={cn("text-foreground font-semibold tracking-[-0.01em]", wordmarkSize[size])}>OTC Accounting</span>
     </span>
   );
