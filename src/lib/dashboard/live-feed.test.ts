@@ -5,6 +5,7 @@ import {
   applyEvent,
   countLowConfidence,
   filterByParams,
+  isUnrecognized,
   matchesSearch,
   mergeEvents,
   parseDashboardSearchParams,
@@ -227,6 +228,99 @@ describe("countLowConfidence", () => {
     });
 
     expect(countLowConfidence(row, THRESHOLD)).toBe(1);
+  });
+});
+
+describe("isUnrecognized", () => {
+  const unknownExtracted = { doc_type: "unknown", doc_type_confidence: 0.4, fields: null };
+
+  it("returns true for needs_review + doc_type='unknown' + fields:null", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "unknown",
+      extracted_data: unknownExtracted,
+    });
+
+    expect(isUnrecognized(row)).toBe(true);
+  });
+
+  it("returns true when doc_type is null (same Unrecognized story)", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: null,
+      extracted_data: unknownExtracted,
+    });
+
+    expect(isUnrecognized(row)).toBe(true);
+  });
+
+  it("returns true for arbitrary unsupported doc_type strings (e.g. future form types)", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "1099_k",
+      extracted_data: unknownExtracted,
+    });
+
+    expect(isUnrecognized(row)).toBe(true);
+  });
+
+  it("returns false for low-confidence W-2 on needs_review (the existing Needs review path)", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "w2",
+      doc_type_confidence: 0.6,
+      extracted_data: {
+        doc_type: "w2",
+        doc_type_confidence: 0.6,
+        fields: { wages: { value: 50000, confidence: 0.5 } },
+      },
+    });
+
+    expect(isUnrecognized(row)).toBe(false);
+  });
+
+  it("returns false when extracted_data is null (guard against schema drift)", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "unknown",
+      extracted_data: null,
+    });
+
+    expect(isUnrecognized(row)).toBe(false);
+  });
+
+  it("returns false when fields is an empty object, not null", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "unknown",
+      extracted_data: { doc_type: "unknown", fields: {} },
+    });
+
+    expect(isUnrecognized(row)).toBe(false);
+  });
+
+  it("returns false when extracted_data is a record but the fields key is absent entirely", () => {
+    const row = makeRow("a", {
+      status: "needs_review",
+      doc_type: "unknown",
+      extracted_data: { doc_type: "unknown" },
+    });
+
+    expect(isUnrecognized(row)).toBe(false);
+  });
+
+  it("returns false for non-needs_review statuses regardless of shape", () => {
+    const statuses: ReadonlyArray<DocumentRow["status"]> = ["pending", "processing", "complete", "failed"];
+
+    for (const status of statuses) {
+      const row = makeRow(status, {
+        status,
+        doc_type: "unknown",
+        extracted_data: unknownExtracted,
+      });
+
+      expect(isUnrecognized(row)).toBe(false);
+    }
   });
 });
 
