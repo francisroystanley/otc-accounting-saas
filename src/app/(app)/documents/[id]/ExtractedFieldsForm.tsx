@@ -203,7 +203,7 @@ const ExtractedFieldsForm = ({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-x-2">
         <div>
           <h2 className="text-sm font-medium">{spec.label} fields</h2>
           <p className="text-muted-foreground text-xs">
